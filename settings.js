@@ -1,5 +1,5 @@
 module.exports = {
-    startimage: 'https://files.catbox.moe/uvh9dt.png',
+    startimage: 'https://files.catbox.moe/qwvzbn.png',
     ownerNumber: process.env.OWNER_NUMBER || '92302742882',
     botName: 'ZESHOO MINI BOT',
     ownerName: 'ZESHOO',
