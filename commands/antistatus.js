@@ -1,25 +1,50 @@
-// main.js (your main bot file)
+// main.js
 const antiStatusHandler = require('./antiStatusHandler');
 
-// Your message handler (example)
+// Your botData structure
+let botData = {
+    antiStatusGroups: {},
+    // ... other bot data
+};
+
+// Your message handler
 sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0];
     
-    // Handle anti-status
+    // Handle anti-status FIRST
     await antiStatusHandler(sock, msg, botData, saveBotData);
     
-    // Your other message handlers...
+    // Then handle other commands...
+    if (msg.message?.conversation || msg.message?.extendedTextMessage?.text) {
+        const messageText = msg.message?.conversation || 
+                           msg.message?.extendedTextMessage?.text || '';
+        
+        // Check for antistatus command
+        if (messageText.startsWith('.antistatus')) {
+            const args = messageText.split(' ');
+            // ... your command handling
+        }
+    }
 });
 
-// Your antiStatus command (already working)
+// Save function
+function saveBotData() {
+    // Your save logic (file, database, etc.)
+}
+
+// Export your command (already working)
 async function antistatusCommand(sock, from, msg, isAdmin, botData, saveBotData, args) {
-    if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { 
-        text: "❌ This command only works in groups." 
-    }, { quoted: msg });
+    if (!from.endsWith('@g.us')) {
+        return await sock.sendMessage(from, { 
+            text: "❌ This command only works in groups." 
+        }, { quoted: msg });
+    }
     
-    if (!isAdmin) return await sock.sendMessage(from, { 
-        text: "❌ Only admins can use this command." 
-    }, { quoted: msg });
+    if (!isAdmin) {
+        return await sock.sendMessage(from, { 
+            text: "❌ Only admins can use this command." 
+        }, { quoted: msg });
+    }
 
     const action = args[0]?.toLowerCase();
     if (!botData.antiStatusGroups) botData.antiStatusGroups = {};
