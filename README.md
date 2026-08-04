@@ -55,3 +55,7 @@ Default password: `zeshoo_techteaM`
 ## License
 
 MIT
+
+⚠️ Important Warning
+
+ This bot is created for educational purposes only. This is NOT an official WhatsApp bot. Using this bot may lead to your WhatsApp account being banned. Use it at your own risk. The developers will not be responsible for any consequences or account bans that may occur while using this bot.
