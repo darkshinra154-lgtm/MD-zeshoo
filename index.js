@@ -43,6 +43,7 @@ const commands = {
     tagall: require('./commands/tagall'),
     tagadmin: require('./commands/tagadmin'),
     groupinfo: require('./commands/groupinfo'),
+    kickall: require('./commands/kickall'),
     grouplink: require('./commands/grouplink'),
     join: require('./commands/join'),
     leave: require('./commands/leave'),
@@ -931,7 +932,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} kickall\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -987,6 +988,7 @@ class BotSession {
                                         case 'hidetag': await commands.hidetag(this.sock, from, msg, isAdmin, q); break;
                                         case 'tagall': await commands.tagall(this.sock, from, msg, isAdmin, q); break;
                                         case 'groupinfo': case 'ginfo': await commands.groupinfo(this.sock, from, msg); break;
+                                        case 'kickall': await commands.kickall(this.sock, from, msg, isAdmin); break;
                                         case 'accept': await commands.accept(this.sock, from, msg, isAdmin); break;
                                         case 'poll': await commands.poll(this.sock, from, msg, q); break;
                                         case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, isAdmin, q); break;
