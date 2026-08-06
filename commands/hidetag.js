@@ -5,7 +5,7 @@ async function hidetagCommand(sock, from, msg, isAdmin, q) {
     const participants = groupMetadata.participants.map(p => p.id);
     
     await sock.sendMessage(from, { 
-        text: q || "Hi Everyone!", 
+        text: q || "Assalamu Alaikum Everyone!", 
         mentions: participants 
     });
 }
