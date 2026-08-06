@@ -3,9 +3,7 @@ async function acceptCommand(sock, from, msg, isAdmin) {
         return sock.sendMessage(from, { text: '❌ This command can only be used in groups.' }, { quoted: msg });
     }
 
-    if (!isAdmin) {
-        return sock.sendMessage(from, { text: '❌ Only group admins can use this command.' }, { quoted: msg });
-    }
+    // Restriction removed: Only group admins can use this command.
 
     try {
         // Fetch pending join requests
