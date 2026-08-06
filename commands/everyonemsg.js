@@ -7,7 +7,7 @@ module.exports = async function(sock, chatId, msg, isAdmin, q) {
         
         let text = '*\u1F4AC Everyone Message*\n\n';
         participants.forEach(p => { text += `@${p.split('@')[0]} `; });
-        text += `\n\n${q || 'Hello everyone!'}`;
+        text += `\n\n${q || 'Assalamu Alaikum everyone!'}`;
         
         await sock.sendMessage(chatId, { text, mentions: participants }, { quoted: msg });
     } catch (e) {
