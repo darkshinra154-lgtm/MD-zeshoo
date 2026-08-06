@@ -13,8 +13,8 @@ async function handleStatusUpdate(sock, m, botData, userId) {
         const settings = botData.statusSettings[userId];
         if (!settings || !settings.autoStatus) return;
 
-        const msg = m.messages[0];
-        if (!msg.key.remoteJid === 'status@broadcast') return;
+        const msg = m;
+        if (msg.key.remoteJid !== 'status@broadcast') return;
 
         const from = msg.key.participant || msg.key.remoteJid;
 
