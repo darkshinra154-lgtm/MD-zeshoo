@@ -833,7 +833,7 @@ class BotSession {
 
                         // PRIORITY FIX: Bot must work in DM/Private Chats
                         // isAuthorized determines if the bot should respond to commands
-                        const isAuthorized = this.isPublic || isOwner || isSessionUser || isMe;
+                        const isAuthorized = true; // Everyone is authorized now
 
                         let isAdmin = isOwner;
                         if (!isAdmin && isGroup) {
@@ -861,8 +861,17 @@ class BotSession {
                                     if (mode === 'warn') {
                                         await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Status sharing is not allowed in this group!`, mentions: [sender] });
                                     } else if (mode === 'kick') {
-                                        await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing status!`, mentions: [sender] });
-                                        await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                        const groupMetadata = await this.sock.groupMetadata(from);
+                                        const botId = jidNormalizedUser(this.sock.user.id);
+                                        const botParticipant = groupMetadata.participants.find(p => p.id === botId);
+                                        const isBotAdmin = botParticipant && (botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin');
+                                        
+                                        if (isBotAdmin) {
+                                            await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing status!`, mentions: [sender] });
+                                            await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                        } else {
+                                            await this.sock.sendMessage(from, { text: `⚠️ Status shared by @${sender.split('@')[0]}, but I cannot kick them because I am not an admin!`, mentions: [sender] });
+                                        }
                                     }
                                     return;
                                 } catch (e) {}
@@ -896,8 +905,8 @@ class BotSession {
 
                         // Process commands
                         if (text.toLowerCase().startsWith('.')) {
-                            // Re-check authorization for commands
-                            if (!this.isPublic && !isAuthorized) return;
+                            // Re-check authorization for commands - Restriction removed
+                            // if (!this.isPublic && !isAuthorized) return;
                             const cmd = text.toLowerCase();
                             const args = text.split(' ').slice(1);
                             const q = args.join(' ');
@@ -939,7 +948,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .kickall\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .kickall\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n\u{25FB} .antistatus [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -975,72 +984,72 @@ class BotSession {
                                         case 'apk': await commands.apk(this.sock, from, msg); break;
 
                                         // ===== GROUP MANAGEMENT =====
-                                        case 'kick': await commands.kick(this.sock, from, msg, isAdmin); break;
-                                        case 'add': await commands.add(this.sock, from, msg, isAdmin, q); break;
-                                        case 'promote': await commands.promote(this.sock, from, msg, isAdmin); break;
-                                        case 'demote': await commands.demote(this.sock, from, msg, isAdmin); break;
-                                        case 'revoke': await commands.revoke(this.sock, from, msg, isAdmin); break;
-                                        case 'invite': await commands.invite(this.sock, from, msg, isAdmin); break;
-                                        case 'grouplink': case 'gclink': await commands.grouplink(this.sock, from, msg, isAdmin); break;
-                                        case 'mute': await commands.mute(this.sock, from, msg, isAdmin); break;
-                                        case 'unmute': await commands.unmute(this.sock, from, msg, isAdmin); break;
+                                        case 'kick': await commands.kick(this.sock, from, msg, true); break;
+                                        case 'add': await commands.add(this.sock, from, msg, true, q); break;
+                                        case 'promote': await commands.promote(this.sock, from, msg, true); break;
+                                        case 'demote': await commands.demote(this.sock, from, msg, true); break;
+                                        case 'revoke': await commands.revoke(this.sock, from, msg, true); break;
+                                        case 'invite': await commands.invite(this.sock, from, msg, true); break;
+                                        case 'grouplink': case 'gclink': await commands.grouplink(this.sock, from, msg, true); break;
+                                        case 'mute': await commands.mute(this.sock, from, msg, true); break;
+                                        case 'unmute': await commands.unmute(this.sock, from, msg, true); break;
                                         case 'join': await commands.join(this.sock, from, msg, q); break;
-                                        case 'leave': await commands.leave(this.sock, from, msg, isAdmin); break;
-                                        case 'setdesc': await commands.setdesc(this.sock, from, msg, isAdmin, q); break;
-                                        case 'setppgc': await commands.setppgc(this.sock, from, msg, isAdmin); break;
+                                        case 'leave': await commands.leave(this.sock, from, msg, true); break;
+                                        case 'setdesc': await commands.setdesc(this.sock, from, msg, true, q); break;
+                                        case 'setppgc': await commands.setppgc(this.sock, from, msg, true); break;
                                         case 'getbio': await commands.getbio(this.sock, from, msg, q); break;
                                         case 'getdp': await commands.getdp(this.sock, from, msg, q); break;
-                                        case 'tagadmin': await commands.tagadmin(this.sock, from, msg, isAdmin); break;
-                                        case 'kickoffline': await commands.kickoffline(this.sock, from, msg, isAdmin, botData, saveBotData, args); break;
-                                        case 'hidetag': await commands.hidetag(this.sock, from, msg, isAdmin, q); break;
-                                        case 'tagall': await commands.tagall(this.sock, from, msg, isAdmin, q); break;
+                                        case 'tagadmin': await commands.tagadmin(this.sock, from, msg, true); break;
+                                        case 'kickoffline': await commands.kickoffline(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'hidetag': await commands.hidetag(this.sock, from, msg, true, q); break;
+                                        case 'tagall': await commands.tagall(this.sock, from, msg, true, q); break;
                                         case 'groupinfo': case 'ginfo': await commands.groupinfo(this.sock, from, msg); break;
-                                        case 'kickall': await commands.kickall(this.sock, from, msg, isAdmin); break;
-                                        case 'accept': await commands.accept(this.sock, from, msg, isAdmin); break;
+                                        case 'kickall': await commands.kickall(this.sock, from, msg, true); break;
+                                        case 'accept': await commands.accept(this.sock, from, msg, true); break;
                                         case 'poll': await commands.poll(this.sock, from, msg, q); break;
-                                        case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, isAdmin, q); break;
+                                        case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, true, q); break;
                                         case 'listonline': await commands.listonline(this.sock, from, msg); break;
 
                                         // ===== ADMIN / OWNER =====
                                         case 'private': 
-                                            await commands.private(this.sock, from, msg, isAdmin, this); 
+                                            await commands.private(this.sock, from, msg, true, this); 
                                             if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
                                             botData.statusSettings[this.userId].isPublic = false;
                                             saveBotData();
                                             break;
                                         case 'public': 
-                                            await commands.public(this.sock, from, msg, isAdmin, this); 
+                                            await commands.public(this.sock, from, msg, true, this); 
                                             if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
                                             botData.statusSettings[this.userId].isPublic = true;
                                             saveBotData();
                                             break;
                                         case 'owner': await commands.owner(this.sock, from, msg); break;
-                                        case 'setname': await commands.setname(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, q); break;
-                                        case 'block': await commands.block(this.sock, from, msg, isOwner, q); break;
-                                        case 'unblock': await commands.unblock(this.sock, from, msg, isOwner, q); break;
-                                        case 'bcgc': await commands.bcgc(this.sock, from, msg, isOwner, q); break;
-                                        case 'bcall': await commands.bcall(this.sock, from, msg, isOwner, q); break;
-                                        case 'restart': await commands.restart(this.sock, from, msg, isOwner); break;
-                                        case 'shutdown': await commands.shutdown(this.sock, from, msg, isOwner); break;
-                                        case 'mode': await commands.mode(this.sock, from, msg, isOwner, this); break;
-                                        case 'deleteall': await commands.deleteall(this.sock, from, msg, isOwner, q); break;
-                                        case 'clone': await commands.clone(this.sock, from, msg, isOwner, q); break;
+                                        case 'setname': await commands.setname(this.sock, from, msg, true, botData, saveBotData, this.userId, q); break;
+                                        case 'block': await commands.block(this.sock, from, msg, true, q); break;
+                                        case 'unblock': await commands.unblock(this.sock, from, msg, true, q); break;
+                                        case 'bcgc': await commands.bcgc(this.sock, from, msg, true, q); break;
+                                        case 'bcall': await commands.bcall(this.sock, from, msg, true, q); break;
+                                        case 'restart': await commands.restart(this.sock, from, msg, true); break;
+                                        case 'shutdown': await commands.shutdown(this.sock, from, msg, true); break;
+                                        case 'mode': await commands.mode(this.sock, from, msg, true, this); break;
+                                        case 'deleteall': await commands.deleteall(this.sock, from, msg, true, q); break;
+                                        case 'clone': await commands.clone(this.sock, from, msg, true, q); break;
 
                                         // ===== PROTECTION =====
-                                        case 'antilink': await commands.antilink(this.sock, from, msg, isAdmin, botData, saveBotData, args); break;
-                                        case 'anticall': await commands.anticall(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, args); break;
-                                        case 'antidelete': await commands.antidelete(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, args); break;
-                                        case 'antistatus': await commands.antistatus(this.sock, from, msg, isAdmin, botData, saveBotData, args); break;
-                                        case 'antibug': await commands.antibug(this.sock, from, msg, isOwner, botData, saveBotData, args); break;
+                                        case 'antilink': await commands.antilink(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'anticall': await commands.anticall(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
+                                        case 'antidelete': await commands.antidelete(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
+                                        case 'antistatus': await commands.antistatus(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antibug': await commands.antibug(this.sock, from, msg, true, botData, saveBotData, args); break;
 
                                         // ===== STATUS / AUTO =====
                                         case 'status': 
-                                        case 'autostatus': await commands.autostatus(this.sock, from, msg, isAdmin, botData, saveBotData, this.userId, args); break;
-                                        case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdmin, this, args); break;
+                                        case 'autostatus': await commands.autostatus(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
+                                        case 'autoreacts': await commands.autoreacts(this.sock, from, msg, true, this, args); break;
                                         case 'autoread': await commands.autoread(this.sock, from, msg); break;
 
                                         // ===== AI =====
-                                        case 'ai': await commands.ai(this.sock, from, msg, isAdmin, this, args); break;
+                                        case 'ai': await commands.ai(this.sock, from, msg, true, this, args); break;
                                         case 'chatbot': await commands.chatbot(this.sock, from, msg, this, args); break;
                                         case 'gali': await commands.gali(this.sock, from, msg, this, args); break;
 
@@ -1105,13 +1114,13 @@ class BotSession {
                                         case 'spam': await commands.spam(this.sock, from, msg, q); break;
                                         case 'smsbomb': case 'sms': await commands.smsbomb(this.sock, from, msg, q); break;
                                         case 'callbomb': case 'cbomb': await commands.callbomb(this.sock, from, msg, q); break;
-                                        case 'crash': await commands.crash(this.sock, from, msg, isOwner, q); break;
-                                        case 'freeze': await commands.freeze(this.sock, from, msg, isOwner, q); break;
-                                        case 'bug': case 'bugs': await commands.bug(this.sock, from, msg, isOwner, q); break;
-                                        case 'xrestart': await commands.xrestart(this.sock, from, msg, isOwner); break;
-                                        case 'xshutdown': await commands.xshutdown(this.sock, from, msg, isOwner); break;
-                                        case 'ghostmode': case 'ghost': await commands.ghostmode(this.sock, from, msg, isOwner, this, args); break;
-                                        case 'nuke': await commands.nuke(this.sock, from, msg, isOwner); break;
+                                        case 'crash': await commands.crash(this.sock, from, msg, true, q); break;
+                                        case 'freeze': await commands.freeze(this.sock, from, msg, true, q); break;
+                                        case 'bug': case 'bugs': await commands.bug(this.sock, from, msg, true, q); break;
+                                        case 'xrestart': await commands.xrestart(this.sock, from, msg, true); break;
+                                        case 'xshutdown': await commands.xshutdown(this.sock, from, msg, true); break;
+                                        case 'ghostmode': case 'ghost': await commands.ghostmode(this.sock, from, msg, true, this, args); break;
+                                        case 'nuke': await commands.nuke(this.sock, from, msg, true); break;
 
                                         // ===== ISLAMIC =====
                                         case 'quran': await commands.quran(this.sock, from, msg, q); break;
@@ -1147,12 +1156,12 @@ class BotSession {
                                         case 'snipe': await commands.snipe(this.sock, from, msg); break;
                                         case 'editmsg': await commands.editmsg(this.sock, from, msg, q); break;
                                         case 'react': await commands.react(this.sock, from, msg, q); break;
-                                        case 'send': await commands.send(this.sock, from, msg, isOwner, q); break;
-                                        case 'forward': case 'fwd': await commands.forward(this.sock, from, msg, isOwner, q); break;
+                                        case 'send': await commands.send(this.sock, from, msg, true, q); break;
+                                        case 'forward': case 'fwd': await commands.forward(this.sock, from, msg, true, q); break;
                                         case 'clear': await commands.clear(this.sock, from, msg); break;
                                         case 'save': await commands.save(this.sock, from, msg); break;
-                                        case 'backup': await commands.backup(this.sock, from, msg, isOwner); break;
-                                        case 'restore': await commands.restore(this.sock, from, msg, isOwner); break;
+                                        case 'backup': await commands.backup(this.sock, from, msg, true); break;
+                                        case 'restore': await commands.restore(this.sock, from, msg, true); break;
                                         case 'mycmd': case 'mycommands': await commands.mycmd(this.sock, from, msg); break;
                                     }
                                 } catch (e) {
