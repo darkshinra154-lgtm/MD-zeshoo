@@ -72,6 +72,9 @@ const commands = {
     antidelete: require('./commands/antidelete'),
     antistatus: require('./commands/antistatus'),
     antisticker: require('./commands/antisticker'),
+    antivoice: require('./commands/antivoice'),
+    antiimage: require('./commands/antiimage'),
+    antivideo: require('./commands/antivideo'),
 
     // Status/Auto Features
     status: require('./commands/status'),
@@ -505,13 +508,16 @@ fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
 let botData;
-const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
+const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
 if (fs.existsSync(DATA_FILE)) {
     try { 
         const loadedData = fs.readJsonSync(DATA_FILE); 
         botData = { ...defaultBotData, ...loadedData, 
             antilinkGroups: { ...defaultBotData.antilinkGroups, ...(loadedData.antilinkGroups || {}) },
             antiStickerGroups: { ...defaultBotData.antiStickerGroups, ...(loadedData.antiStickerGroups || {}) },
+            antiVoiceGroups: { ...defaultBotData.antiVoiceGroups, ...(loadedData.antiVoiceGroups || {}) },
+            antiImageGroups: { ...defaultBotData.antiImageGroups, ...(loadedData.antiImageGroups || {}) },
+            antiVideoGroups: { ...defaultBotData.antiVideoGroups, ...(loadedData.antiVideoGroups || {}) },
             antiStatusGroups: { ...defaultBotData.antiStatusGroups, ...(loadedData.antiStatusGroups || {}) },
             statusSettings: { ...defaultBotData.statusSettings, ...(loadedData.statusSettings || {}) }
         };
@@ -986,6 +992,87 @@ class BotSession {
                             }
                         }
                         // ===== END ANTI-STICKER SYSTEM =====
+                        
+                        // ===== ANTI-MEDIA SYSTEM (VOICE, IMAGE, VIDEO) =====
+                        if (isGroup && !isMe && (!isAdmin || isOwner)) {
+                            let mediaAction = null;
+                            let mediaType = null;
+                            let mediaLabel = "";
+
+                            // 1. Check Voice/Audio
+                            if (botData.antiVoiceGroups && botData.antiVoiceGroups[from]) {
+                                if (type === 'audioMessage') {
+                                    mediaAction = botData.antiVoiceGroups[from];
+                                    mediaType = 'voice note';
+                                    mediaLabel = 'AntiVoice';
+                                }
+                            }
+
+                            // 2. Check Image
+                            if (!mediaAction && botData.antiImageGroups && botData.antiImageGroups[from]) {
+                                if (type === 'imageMessage') {
+                                    mediaAction = botData.antiImageGroups[from];
+                                    mediaType = 'image';
+                                    mediaLabel = 'AntiImage';
+                                }
+                            }
+
+                            // 3. Check Video
+                            if (!mediaAction && botData.antiVideoGroups && botData.antiVideoGroups[from]) {
+                                if (type === 'videoMessage') {
+                                    mediaAction = botData.antiVideoGroups[from];
+                                    mediaType = 'video';
+                                    mediaLabel = 'AntiVideo';
+                                }
+                            }
+
+                            if (mediaAction && mediaAction !== 'false') {
+                                // Skip if sender is admin (unless they are owner)
+                                if (isAdmin && !isOwner) {
+                                    // Skip
+                                } else {
+                                    try {
+                                        this.sendLog(`[${mediaLabel}] ${mediaType} detected in ${from} from ${sender} | Mode: ${mediaAction}`, 'info');
+                                        
+                                        // Step 1: ALWAYS delete the message
+                                        try {
+                                            await this.sock.sendMessage(from, { delete: msg.key });
+                                        } catch (delErr) {
+                                            this.sendLog(`[${mediaLabel}] Delete error: ${delErr.message}`, 'error');
+                                        }
+
+                                        // Step 2: Take action based on mode
+                                        if (mediaAction === 'warn') {
+                                            await this.sock.sendMessage(from, { 
+                                                text: `⚠️ *${mediaLabel.toUpperCase()} ALERT*\n\n@${sender.split('@')[0]} ${mediaType.toUpperCase()}S are NOT allowed in this group!\n_Your message has been deleted._\n_Next time you will be kicked._`, 
+                                                mentions: [sender] 
+                                            });
+                                        } else if (mediaAction === 'kick') {
+                                            const gMeta = await this.sock.groupMetadata(from);
+                                            const botJid = jidNormalizedUser(this.sock.user.id);
+                                            const botIsAdmin = gMeta.participants.find(p => p.id === botJid);
+                                            
+                                            if (botIsAdmin && (botIsAdmin.admin === 'admin' || botIsAdmin.admin === 'superadmin')) {
+                                                await this.sock.sendMessage(from, { 
+                                                    text: `🚫 *${mediaLabel.toUpperCase()} - KICKED*\n\n@${sender.split('@')[0]} has been kicked for sharing ${mediaType}!`, 
+                                                    mentions: [sender] 
+                                                });
+                                                await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                            } else {
+                                                await this.sock.sendMessage(from, { 
+                                                    text: `⚠️ @${sender.split('@')[0]} shared a ${mediaType}! I need admin role to kick.`, 
+                                                    mentions: [sender] 
+                                                });
+                                            }
+                                        }
+                                        return; // Stop processing this message
+                                    } catch (e) {
+                                        this.sendLog(`[${mediaLabel}] Critical error: ${e.message}`, 'error');
+                                    }
+                                }
+                            }
+                        }
+                        // ===== END ANTI-MEDIA SYSTEM =====
 
                         // Antilink
                         if (isGroup && botData.antilinkGroups[from] && !isAdmin) {
@@ -1057,7 +1144,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]\n\u{25FB} .antisticker [on/off/warn/kick]`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]\n\u{25FB} .antisticker [on/off/warn/kick]\n\u{25FB} .antivoice [on/off/warn/kick]\n\u{25FB} .antiimage [on/off/warn/kick]\n\u{25FB} .antivideo [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -1150,6 +1237,9 @@ class BotSession {
                                         case 'antidelete': await commands.antidelete(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
                                         case 'antistatus': await commands.antistatus(this.sock, from, msg, true, botData, saveBotData, args); break;
                                         case 'antisticker': await commands.antisticker(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antivoice': await commands.antivoice(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antiimage': await commands.antiimage(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antivideo': await commands.antivideo(this.sock, from, msg, true, botData, saveBotData, args); break;
                                         case 'antibug': await commands.antibug(this.sock, from, msg, true, botData, saveBotData, args); break;
 
                                         // ===== STATUS / AUTO =====
