@@ -890,58 +890,102 @@ class BotSession {
                         }
 
 
-                        // Anti-sticker in groups
-                        if (isGroup && botData.antiStickerGroups && botData.antiStickerGroups[from]) {
-                            const mode = botData.antiStickerGroups[from];
-                            if (mode !== false && mode !== 'false' && !isMe) {
-                                // Check if the raw message contains a sticker (before unwrapping)
-                                const rawMsg = JSON.stringify(msg.message || {});
-                                const hasSticker = rawMsg.includes('stickerMessage') || type === 'stickerMessage' || 
-                                    (messageContent && messageContent.stickerMessage);
+                        // ===== ANTI-STICKER SYSTEM =====
+                        // This runs BEFORE any command processing to catch ALL sticker messages
+                        if (isGroup && botData.antiStickerGroups && botData.antiStickerGroups[from] && botData.antiStickerGroups[from] !== false && botData.antiStickerGroups[from] !== 'false') {
+                            const antiStickerMode = botData.antiStickerGroups[from];
+                            
+                            // Robust sticker detection - checks EVERY possible way a sticker can arrive
+                            let isStickerMsg = false;
+                            
+                            // Method 1: Check raw msg.message for stickerMessage key at any level
+                            if (msg.message) {
+                                const rawStr = JSON.stringify(msg.message);
+                                if (rawStr.includes('stickerMessage')) isStickerMsg = true;
+                            }
+                            
+                            // Method 2: Check the unwrapped messageContent
+                            if (messageContent && messageContent.stickerMessage) isStickerMsg = true;
+                            
+                            // Method 3: Check if type is stickerMessage
+                            if (type === 'stickerMessage') isStickerMsg = true;
+                            
+                            // Method 4: Check inside ephemeralMessage specifically
+                            if (msg.message?.ephemeralMessage?.message?.stickerMessage) isStickerMsg = true;
+                            
+                            // Method 5: Check inside viewOnceMessage specifically
+                            if (msg.message?.viewOnceMessage?.message?.stickerMessage) isStickerMsg = true;
+                            
+                            // Method 6: Check inside viewOnceMessageV2 specifically
+                            if (msg.message?.viewOnceMessageV2?.message?.stickerMessage) isStickerMsg = true;
+                            
+                            if (isStickerMsg && !isMe) {
+                                this.sendLog(`[AntiSticker] Sticker detected in ${from} from ${sender} | Mode: ${antiStickerMode}`, 'info');
                                 
-                                if (hasSticker) {
-                                    if (isAdmin && !isOwner) {
-                                        // Skip admins unless owner
-                                    } else {
+                                // Skip if sender is admin (unless they are owner)
+                                if (isAdmin && !isOwner) {
+                                    this.sendLog(`[AntiSticker] Admin ${sender} sent sticker - skipped (admin exempt)`, 'info');
+                                } else {
+                                    try {
+                                        // Step 1: ALWAYS delete the sticker message
                                         try {
-                                            // Delete the sticker message
-                                            try {
-                                                await this.sock.sendMessage(from, { delete: msg.key });
-                                            } catch (delErr) {
-                                                this.sendLog(`[AntiSticker] Delete failed: ${delErr.message}`, 'warning');
-                                            }
-
-                                            if (mode === 'warn' || mode === 'delete') {
-                                                if (mode === 'warn') {
-                                                    await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Stickers are not allowed in this group!`, mentions: [sender] });
-                                                }
-                                            } else if (mode === 'kick') {
-                                                try {
-                                                    const gMeta = await this.sock.groupMetadata(from);
-                                                    const botJid = jidNormalizedUser(this.sock.user.id);
-                                                    const botP = gMeta.participants.find(p => p.id === botJid);
-                                                    if (botP && (botP.admin === 'admin' || botP.admin === 'superadmin')) {
-                                                        await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing sticker!`, mentions: [sender] });
-                                                        try {
-                                                            await this.sock.groupParticipantsUpdate(from, [sender], "remove");
-                                                        } catch (kickErr) {
-                                                            this.sendLog(`[AntiSticker] Kick failed: ${kickErr.message}`, 'warning');
-                                                        }
-                                                    } else {
-                                                        await this.sock.sendMessage(from, { text: `⚠️ Sticker shared by @${sender.split('@')[0]}, but I am not admin!`, mentions: [sender] });
-                                                    }
-                                                } catch (metaErr) {
-                                                    this.sendLog(`[AntiSticker] Metadata error: ${metaErr.message}`, 'warning');
-                                                }
-                                            }
-                                            return;
-                                        } catch (e) {
-                                            this.sendLog(`[AntiSticker] Error: ${e.message}`, 'error');
+                                            await this.sock.sendMessage(from, { delete: msg.key });
+                                            this.sendLog(`[AntiSticker] Deleted sticker from ${sender.split('@')[0]}`, 'info');
+                                        } catch (delErr) {
+                                            this.sendLog(`[AntiSticker] Delete error: ${delErr.message}`, 'error');
                                         }
+
+                                        // Step 2: Take action based on mode
+                                        if (antiStickerMode === 'warn') {
+                                            try {
+                                                await this.sock.sendMessage(from, { 
+                                                    text: `⚠️ *ANTI-STICKER ALERT*\n\n@${sender.split('@')[0]} Stickers are NOT allowed in this group!\n_Your sticker has been deleted._\n_Next time you will be kicked._`, 
+                                                    mentions: [sender] 
+                                                });
+                                                this.sendLog(`[AntiSticker] Warned ${sender.split('@')[0]}`, 'info');
+                                            } catch (warnErr) {
+                                                this.sendLog(`[AntiSticker] Warn error: ${warnErr.message}`, 'error');
+                                            }
+                                        } else if (antiStickerMode === 'kick') {
+                                            try {
+                                                const gMeta = await this.sock.groupMetadata(from);
+                                                const botJid = jidNormalizedUser(this.sock.user.id);
+                                                const botIsAdmin = gMeta.participants.find(p => p.id === botJid);
+                                                
+                                                if (botIsAdmin && (botIsAdmin.admin === 'admin' || botIsAdmin.admin === 'superadmin')) {
+                                                    try {
+                                                        await this.sock.sendMessage(from, { 
+                                                            text: `🚫 *ANTI-STICKER - KICKED*\n\n@${sender.split('@')[0]} has been kicked for sharing sticker!`, 
+                                                            mentions: [sender] 
+                                                        });
+                                                        await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                                        this.sendLog(`[AntiSticker] Kicked ${sender.split('@')[0]}`, 'info');
+                                                    } catch (kickErr) {
+                                                        this.sendLog(`[AntiSticker] Kick execution error: ${kickErr.message}`, 'error');
+                                                    }
+                                                } else {
+                                                    try {
+                                                        await this.sock.sendMessage(from, { 
+                                                            text: `⚠️ @${sender.split('@')[0]} shared a sticker! I need admin role to kick.`, 
+                                                            mentions: [sender] 
+                                                        });
+                                                    } catch (notifErr) {}
+                                                }
+                                            } catch (metaErr) {
+                                                this.sendLog(`[AntiSticker] Group metadata error: ${metaErr.message}`, 'error');
+                                            }
+                                        } else if (antiStickerMode === 'delete') {
+                                            // Already deleted above, no extra action needed
+                                            this.sendLog(`[AntiSticker] Sticker deleted (delete mode)`, 'info');
+                                        }
+                                    } catch (e) {
+                                        this.sendLog(`[AntiSticker] Critical error: ${e.message}`, 'error');
                                     }
+                                    return; // Stop processing this message further
                                 }
                             }
                         }
+                        // ===== END ANTI-STICKER SYSTEM =====
 
                         // Antilink
                         if (isGroup && botData.antilinkGroups[from] && !isAdmin) {
