@@ -1,7 +1,5 @@
 async function antistatusCommand(sock, from, msg, isAdmin, botData, saveBotData, args) {
     if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: "❌ This command only works in groups." }, { quoted: msg });
-    // Restriction removed: if (!isAdmin) return await sock.sendMessage(from, { text: "❌ Only admins can use this command." }, { quoted: msg });
-
     const action = args[0]?.toLowerCase();
     if (!botData.antiStatusGroups) botData.antiStatusGroups = {};
 
@@ -25,5 +23,4 @@ async function antistatusCommand(sock, from, msg, isAdmin, botData, saveBotData,
         await sock.sendMessage(from, { text: "❌ Usage:\n.antistatus on (Delete only)\n.antistatus warn (Delete + Warn)\n.antistatus kick (Delete + Kick)\n.antistatus off (Disable)" }, { quoted: msg });
     }
 }
-
 module.exports = antistatusCommand;
