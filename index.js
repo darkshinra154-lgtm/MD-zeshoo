@@ -504,10 +504,19 @@ const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
-let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
+let botData;
+const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
 if (fs.existsSync(DATA_FILE)) {
-    try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
-}
+    try { 
+        const loadedData = fs.readJsonSync(DATA_FILE); 
+        botData = { ...defaultBotData, ...loadedData, 
+            antilinkGroups: { ...defaultBotData.antilinkGroups, ...(loadedData.antilinkGroups || {}) },
+            antiStickerGroups: { ...defaultBotData.antiStickerGroups, ...(loadedData.antiStickerGroups || {}) },
+            antiStatusGroups: { ...defaultBotData.antiStatusGroups, ...(loadedData.antiStatusGroups || {}) },
+            statusSettings: { ...defaultBotData.statusSettings, ...(loadedData.statusSettings || {}) }
+        };
+    } catch (e) { botData = { ...defaultBotData }; }
+} else { botData = { ...defaultBotData }; }
 
 function saveBotData() {
     fs.writeJsonSync(DATA_FILE, botData);
@@ -884,27 +893,52 @@ class BotSession {
                         // Anti-sticker in groups
                         if (isGroup && botData.antiStickerGroups && botData.antiStickerGroups[from]) {
                             const mode = botData.antiStickerGroups[from];
-                            if (type === 'stickerMessage' && !isMe) {
-                                if (isAdmin && !isOwner) {
-                                    // Skip admins unless owner
-                                } else {
-                                    try {
-                                        await this.sock.sendMessage(from, { delete: msg.key });
-                                        if (mode === 'warn') {
-                                            await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Stickers are not allowed in this group!`, mentions: [sender] });
-                                        } else if (mode === 'kick') {
-                                            const gMeta = await this.sock.groupMetadata(from);
-                                            const botJid = jidNormalizedUser(this.sock.user.id);
-                                            const botP = gMeta.participants.find(p => p.id === botJid);
-                                            if (botP && (botP.admin === 'admin' || botP.admin === 'superadmin')) {
-                                                await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing sticker!`, mentions: [sender] });
-                                                await this.sock.groupParticipantsUpdate(from, [sender], "remove");
-                                            } else {
-                                                await this.sock.sendMessage(from, { text: `⚠️ Sticker shared by @${sender.split('@')[0]}, but I am not admin!`, mentions: [sender] });
+                            if (mode !== false && mode !== 'false' && !isMe) {
+                                // Check if the raw message contains a sticker (before unwrapping)
+                                const rawMsg = JSON.stringify(msg.message || {});
+                                const hasSticker = rawMsg.includes('stickerMessage') || type === 'stickerMessage' || 
+                                    (messageContent && messageContent.stickerMessage);
+                                
+                                if (hasSticker) {
+                                    if (isAdmin && !isOwner) {
+                                        // Skip admins unless owner
+                                    } else {
+                                        try {
+                                            // Delete the sticker message
+                                            try {
+                                                await this.sock.sendMessage(from, { delete: msg.key });
+                                            } catch (delErr) {
+                                                this.sendLog(`[AntiSticker] Delete failed: ${delErr.message}`, 'warning');
                                             }
+
+                                            if (mode === 'warn' || mode === 'delete') {
+                                                if (mode === 'warn') {
+                                                    await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Stickers are not allowed in this group!`, mentions: [sender] });
+                                                }
+                                            } else if (mode === 'kick') {
+                                                try {
+                                                    const gMeta = await this.sock.groupMetadata(from);
+                                                    const botJid = jidNormalizedUser(this.sock.user.id);
+                                                    const botP = gMeta.participants.find(p => p.id === botJid);
+                                                    if (botP && (botP.admin === 'admin' || botP.admin === 'superadmin')) {
+                                                        await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing sticker!`, mentions: [sender] });
+                                                        try {
+                                                            await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                                        } catch (kickErr) {
+                                                            this.sendLog(`[AntiSticker] Kick failed: ${kickErr.message}`, 'warning');
+                                                        }
+                                                    } else {
+                                                        await this.sock.sendMessage(from, { text: `⚠️ Sticker shared by @${sender.split('@')[0]}, but I am not admin!`, mentions: [sender] });
+                                                    }
+                                                } catch (metaErr) {
+                                                    this.sendLog(`[AntiSticker] Metadata error: ${metaErr.message}`, 'warning');
+                                                }
+                                            }
+                                            return;
+                                        } catch (e) {
+                                            this.sendLog(`[AntiSticker] Error: ${e.message}`, 'error');
                                         }
-                                        return;
-                                    } catch (e) {}
+                                    }
                                 }
                             }
                         }
