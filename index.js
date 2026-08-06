@@ -71,6 +71,7 @@ const commands = {
     anticall: require('./commands/anticall'),
     antidelete: require('./commands/antidelete'),
     antistatus: require('./commands/antistatus'),
+    antisticker: require('./commands/antisticker'),
 
     // Status/Auto Features
     status: require('./commands/status'),
@@ -880,6 +881,34 @@ class BotSession {
                         }
 
 
+                        // Anti-sticker in groups
+                        if (isGroup && botData.antiStickerGroups && botData.antiStickerGroups[from]) {
+                            const mode = botData.antiStickerGroups[from];
+                            if (type === 'stickerMessage' && !isMe) {
+                                if (isAdmin && !isOwner) {
+                                    // Skip admins unless owner
+                                } else {
+                                    try {
+                                        await this.sock.sendMessage(from, { delete: msg.key });
+                                        if (mode === 'warn') {
+                                            await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Stickers are not allowed in this group!`, mentions: [sender] });
+                                        } else if (mode === 'kick') {
+                                            const gMeta = await this.sock.groupMetadata(from);
+                                            const botJid = jidNormalizedUser(this.sock.user.id);
+                                            const botP = gMeta.participants.find(p => p.id === botJid);
+                                            if (botP && (botP.admin === 'admin' || botP.admin === 'superadmin')) {
+                                                await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing sticker!`, mentions: [sender] });
+                                                await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                            } else {
+                                                await this.sock.sendMessage(from, { text: `⚠️ Sticker shared by @${sender.split('@')[0]}, but I am not admin!`, mentions: [sender] });
+                                            }
+                                        }
+                                        return;
+                                    } catch (e) {}
+                                }
+                            }
+                        }
+
                         // Antilink
                         if (isGroup && botData.antilinkGroups[from] && !isAdmin) {
                             const linkPatterns = [/chat.whatsapp.com\//i, /http:\/\//i, /https:\/\//i, /www\./i, /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/i];
@@ -950,7 +979,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]\n\u{25FB} .antisticker [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -1042,6 +1071,7 @@ class BotSession {
                                         case 'anticall': await commands.anticall(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
                                         case 'antidelete': await commands.antidelete(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
                                         case 'antistatus': await commands.antistatus(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antisticker': await commands.antisticker(this.sock, from, msg, true, botData, saveBotData, args); break;
                                         case 'antibug': await commands.antibug(this.sock, from, msg, true, botData, saveBotData, args); break;
 
                                         // ===== STATUS / AUTO =====
