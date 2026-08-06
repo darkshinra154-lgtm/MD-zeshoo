@@ -32,11 +32,11 @@ module.exports = async function(sock, chatId, msg, args) {
 ┃  ➤ https://zeshoo-md-production.up.railway.app/ ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃  📱 *Pairing Guide*                      ┃
-┃  ➤ Type .pair 92XXXXXXXXXX              ┃
+┃  ➤ Type .pair 91XXXXXXXXXX              ┃
 ┃  ➤ Scan QR or enter code in WhatsApp    ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃  🚀 *Quick Connect*                      ┃
-┃  ✨ .pair 923XXXXXXXXX                   ┃
+┃  ✨ .pair 913XXXXXXXXX                   ┃
 ┃  ⚡ Scan • Pair • Enjoy        ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃  👑 *Version*   : ${settings?.version || '3.0'}  ┃
