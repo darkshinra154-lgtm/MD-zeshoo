@@ -89,7 +89,7 @@ module.exports = async function(sock, chatId, msg) {
                                           `🕐 *Date:* ${new Date(fullMsg.createdAt).toLocaleString()}\n\n` +
                                           (otp ? `🔐 *OTP DETECTED:* \`${otp}\`\n\n` : '') +
                                           `📝 *Preview:*\n${fullMsg.intro || fullMsg.text?.substring(0, 500) || 'No content'}\n\n` +
-                                          `_Powered by Shadow MD Bot_`;
+                                          `_Powered by Zeshoo MD Bot_`;
 
                         await sock.sendMessage(chatId, { text: forwardText });
                         session.seenMessages.push(message.id);
@@ -98,14 +98,14 @@ module.exports = async function(sock, chatId, msg) {
             }
 
             // Show current email info
-            const text = `📧 *SHADOW TEMP MAIL* 📧\n\n` +
+            const text = `📧 *ZESHOO TEMP MAIL* 📧\n\n` +
                          `✅ Active Email:\n` +
                          `\`${session.email}\`\n\n` +
                          `📨 Total Emails: ${messages.length}\n` +
                          `🔔 New Emails: ${newMessages.length}\n\n` +
                          `⏳ Checking for OTPs every 30 seconds...\n` +
                          `🔄 Type .tempmail again to check for new emails\n\n` +
-                         `_Powered by Shadow MD Bot_`;
+                         `_Powered by Zeshoo MD Bot_`;
 
             await sock.sendMessage(chatId, { text }, { quoted: msg });
             return;
@@ -124,14 +124,14 @@ module.exports = async function(sock, chatId, msg) {
             seenMessages: []
         };
 
-        const text = `📧 *SHADOW TEMP MAIL CREATED* 📧\n\n` +
+        const text = `📧 *ZESHOO TEMP MAIL CREATED* 📧\n\n` +
                      `✅ *Email:*\n` +
                      `\`${account.email}\`\n\n` +
                      `⏳ Valid for 10 minutes\n` +
                      `🔔 I will forward any OTPs/emails to this chat\n\n` +
                      `📝 Use this email to receive OTPs\n` +
                      `🔄 Type .tempmail again to check for new emails\n\n` +
-                     `_Powered by Shadow MD Bot_`;
+                     `_Powered by Zeshoo MD Bot_`;
 
         await sock.sendMessage(chatId, { text }, { quoted: msg });
 
@@ -177,7 +177,7 @@ function startEmailChecker(sock, chatId, userId) {
                                       `🕐 *Date:* ${new Date(fullMsg.createdAt).toLocaleString()}\n\n` +
                                       (otp ? `🔐 *OTP DETECTED:* \`${otp}\`\n\n` : '') +
                                       `📝 *Preview:*\n${fullMsg.intro || fullMsg.text?.substring(0, 500) || 'No content'}\n\n` +
-                                      `_Powered by Shadow MD Bot_`;
+                                      `_Powered by Zeshoo MD Bot_`;
 
                     await sock.sendMessage(chatId, { text: forwardText });
                     session.seenMessages.push(message.id);
