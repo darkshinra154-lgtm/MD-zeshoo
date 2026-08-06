@@ -848,6 +848,7 @@ class BotSession {
 
                         // Anti-status in groups
                         if (isGroup && botData.antiStatusGroups && botData.antiStatusGroups[from] && !isAdmin) {
+                            const mode = botData.antiStatusGroups[from];
                             const isStatusMsg = msg.message?.protocolMessage?.type === 0 || 
                                            msg.message?.viewOnceMessage || 
                                            msg.message?.viewOnceMessageV2 ||
@@ -857,6 +858,12 @@ class BotSession {
                             if (msg.message?.forwardingScore > 0 || isStatusMsg) {
                                 try {
                                     await this.sock.sendMessage(from, { delete: msg.key });
+                                    if (mode === 'warn') {
+                                        await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Status sharing is not allowed in this group!`, mentions: [sender] });
+                                    } else if (mode === 'kick') {
+                                        await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing status!`, mentions: [sender] });
+                                        await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                    }
                                     return;
                                 } catch (e) {}
                             }
@@ -932,7 +939,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} kickall\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .kickall\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
