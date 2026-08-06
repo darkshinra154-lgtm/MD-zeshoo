@@ -831,10 +831,7 @@ class BotSession {
 
                         const isSessionUser = senderClean === this.phoneNumber || senderClean === this.userId || senderClean === botNumberClean;
 
-                        // PRIORITY FIX: Bot must work in DM/Private Chats
-                        // isAuthorized determines if the bot should respond to commands
-                        const isAuthorized = true; // Everyone authorized
-
+                        // Calculate isAdmin early for authorization
                         let isAdmin = isOwner;
                         if (!isAdmin && isGroup) {
                             try {
@@ -845,6 +842,10 @@ class BotSession {
                                 isAdmin = false;
                             }
                         }
+
+                        // isAuthorized determines if the bot should respond to commands
+                        // Requirement: In Private Mode, only Admins/Owner can use. In Public Mode, everyone.
+                        const isAuthorized = this.isPublic || isOwner || isSessionUser || isMe || isAdmin;
 
                         // Anti-status in groups
                         if (isGroup && botData.antiStatusGroups && botData.antiStatusGroups[from]) {
@@ -907,7 +908,7 @@ class BotSession {
                         // Process commands
                         if (text.toLowerCase().startsWith('.')) {
                             // Re-check authorization for commands
-                            // Gate removed: if (!this.isPublic && !isAuthorized) return;
+                            if (!this.isPublic && !isAuthorized) return;
                             const cmd = text.toLowerCase();
                             const args = text.split(' ').slice(1);
                             const q = args.join(' ');
