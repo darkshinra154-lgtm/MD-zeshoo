@@ -9,7 +9,7 @@ module.exports = async function(sock, chatId, msg, args) {
                 forwardingScore: 999,
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
-                    newsletterJid: "120363207208218980@newsletter",
+                    newsletterJid: "0029Vb8vvB1Fcow4AY0NeC1p@newsletter",
                     newsletterName: "𝐙𝐄𝐒𝐇𝐎𝐎 𝐓𝐄𝐂𝐇",
                     serverMessageId: 200
                 }
