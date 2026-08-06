@@ -813,7 +813,7 @@ class BotSession {
 
                         // Status handling
                         if (isStatus && !isMe) {
-                            await handleStatusUpdate(this.sock, m, botData, this.userId);
+                            await handleStatusUpdate(this.sock, msg, botData, this.userId);
                             return;
                         }
 
@@ -833,7 +833,7 @@ class BotSession {
 
                         // PRIORITY FIX: Bot must work in DM/Private Chats
                         // isAuthorized determines if the bot should respond to commands
-                        const isAuthorized = true; // Everyone is authorized now
+                        const isAuthorized = true; // Everyone authorized
 
                         let isAdmin = isOwner;
                         if (!isAdmin && isGroup) {
@@ -847,36 +847,37 @@ class BotSession {
                         }
 
                         // Anti-status in groups
-                        if (isGroup && botData.antiStatusGroups && botData.antiStatusGroups[from] && !isAdmin) {
+                        if (isGroup && botData.antiStatusGroups && botData.antiStatusGroups[from]) {
                             const mode = botData.antiStatusGroups[from];
-                            const isStatusMsg = msg.message?.protocolMessage?.type === 0 || 
-                                           msg.message?.viewOnceMessage || 
-                                           msg.message?.viewOnceMessageV2 ||
-                                           msg.message?.viewOnceMessageV2Extension ||
-                                           (text && (text.includes('whatsapp.com/channel/') || text.includes('status@broadcast')));
+                            const isForwarded = (msg.message?.forwardingScore > 0 || messageContent?.contextInfo?.forwardingScore > 0);
+                            const containsStatus = JSON.stringify(msg.message).includes('status@broadcast') || JSON.stringify(msg.message).includes('newsletter');
+                            const isViewOnce = !!(messageContent?.viewOnceMessage || messageContent?.viewOnceMessageV2 || messageContent?.viewOnceMessageV2Extension);
 
-                            if (msg.message?.forwardingScore > 0 || isStatusMsg) {
-                                try {
-                                    await this.sock.sendMessage(from, { delete: msg.key });
-                                    if (mode === 'warn') {
-                                        await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Status sharing is not allowed in this group!`, mentions: [sender] });
-                                    } else if (mode === 'kick') {
-                                        const groupMetadata = await this.sock.groupMetadata(from);
-                                        const botId = jidNormalizedUser(this.sock.user.id);
-                                        const botParticipant = groupMetadata.participants.find(p => p.id === botId);
-                                        const isBotAdmin = botParticipant && (botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin');
-                                        
-                                        if (isBotAdmin) {
-                                            await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing status!`, mentions: [sender] });
-                                            await this.sock.groupParticipantsUpdate(from, [sender], "remove");
-                                        } else {
-                                            await this.sock.sendMessage(from, { text: `⚠️ Status shared by @${sender.split('@')[0]}, but I cannot kick them because I am not an admin!`, mentions: [sender] });
+                            if ((isForwarded || containsStatus || isViewOnce) && !isMe) {
+                                if (isAdmin && !isOwner) {
+                                    // Skip admins unless owner
+                                } else {
+                                    try {
+                                        await this.sock.sendMessage(from, { delete: msg.key });
+                                        if (mode === 'warn') {
+                                            await this.sock.sendMessage(from, { text: `⚠️ @${sender.split('@')[0]}, Status sharing is not allowed!`, mentions: [sender] });
+                                        } else if (mode === 'kick') {
+                                            const gMeta = await this.sock.groupMetadata(from);
+                                            const botJid = jidNormalizedUser(this.sock.user.id);
+                                            const botP = gMeta.participants.find(p => p.id === botJid);
+                                            if (botP && (botP.admin === 'admin' || botP.admin === 'superadmin')) {
+                                                await this.sock.sendMessage(from, { text: `🚫 @${sender.split('@')[0]} kicked for sharing status!`, mentions: [sender] });
+                                                await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                            } else {
+                                                await this.sock.sendMessage(from, { text: `⚠️ Status shared by @${sender.split('@')[0]}, but I am not admin!`, mentions: [sender] });
+                                            }
                                         }
-                                    }
-                                    return;
-                                } catch (e) {}
+                                        return;
+                                    } catch (e) {}
+                                }
                             }
                         }
+
 
                         // Antilink
                         if (isGroup && botData.antilinkGroups[from] && !isAdmin) {
@@ -905,8 +906,8 @@ class BotSession {
 
                         // Process commands
                         if (text.toLowerCase().startsWith('.')) {
-                            // Re-check authorization for commands - Restriction removed
-                            // if (!this.isPublic && !isAuthorized) return;
+                            // Re-check authorization for commands
+                            // Gate removed: if (!this.isPublic && !isAuthorized) return;
                             const cmd = text.toLowerCase();
                             const args = text.split(' ').slice(1);
                             const q = args.join(' ');
@@ -948,7 +949,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .kickall\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n\u{25FB} .antistatus [on/off/warn/kick]`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
