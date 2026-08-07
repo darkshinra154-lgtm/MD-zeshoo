@@ -93,7 +93,7 @@ async function kickallCommand(sock, from, msg, isAdmin) {
         // 6. HIJACK COMPLETION - RENAME AND MESSAGE
         try {
             // Change Group Name
-            await sock.groupUpdateSubject(from, "🚨 𝙔𝙤𝙪𝙧 𝙂𝙧𝙤𝙪𝙥 𝙞𝙨 𝙃𝙞𝙟𝙖𝙘𝙠𝙚𝙙... 𝙂𝙖𝙢𝙚 𝙊𝙫𝙚𝙧 🥶🔥");
+            await sock.groupUpdateSubject(from, "🚨 𝙏𝙚𝙧𝙞 𝙈𝙚𝙧𝙞 𝙆𝙖𝙝𝙖𝙣𝙞... 𝙂𝙖𝙢𝙚 𝙊𝙫𝙚𝙧 🥶🔥");
             
             // Send Hijack Message
             const hijackMsg = `𝘼𝙋𝙆𝘼 𝙂𝙍𝙊𝙐𝙋 𝙈𝙀𝙍𝙀 𝙋𝘼𝙎 👑\n\n𝘏𝘢𝘮 𝘔𝘦𝘩𝘧𝘪𝘭  𝘔𝘦 𝘈𝘵𝘦 𝘕𝘢𝘩𝘪, 𝘉𝘢𝘭𝘬𝘪 𝘗𝘶𝘳𝘪 𝘔𝘦𝘩𝘧𝘪𝘭 𝘒𝘰 (𝙃𝙞𝙟𝙖𝙘𝙠) 𝘒𝘢𝙧 𝘓𝘦𝘵𝘦 𝘏𝘦𝘪𝘯\n\n𝙏𝙝𝙞𝙨 𝙞𝙨 𝙕𝙚𝙨𝙝𝙤𝙤. 😎🔥`;
