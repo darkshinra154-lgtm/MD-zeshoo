@@ -40,33 +40,22 @@ async function kickallCommand(sock, from, msg, isAdmin) {
             }
         }
 
-        // 3. Prepare Lists
-        const senderId = jidNormalizedUser(msg.key.participant || msg.key.remoteJid);
-        const senderNumber = senderId.split('@')[0].split(':')[0];
-
-        // List of members to kick (Non-admins)
+        // 3. Filter participants (Skip admins, bot, and sender)
+        const senderId = jidNormalizedUser(msg.key.participant || msg.key.remoteJid).split('@')[0];
         const participantsToKick = groupMetadata.participants
             .filter(p => {
                 const pId = p.id.split('@')[0].split(':')[0];
-                return pId !== botNumber && pId !== senderNumber && !p.admin;
+                return pId !== botNumber && pId !== senderId && !p.admin;
             })
             .map(p => p.id);
 
-        // List of admins to demote (All admins except sender and bot)
-        const adminsToDemote = groupMetadata.participants
-            .filter(p => {
-                const pId = p.id.split('@')[0].split(':')[0];
-                return pId !== botNumber && pId !== senderNumber && (p.admin === 'admin' || p.admin === 'superadmin');
-            })
-            .map(p => p.id);
-
-        if (participantsToKick.length === 0 && adminsToDemote.length === 0) {
-            return await sock.sendMessage(from, { text: '❌ No members to kick or admins to demote.' }, { quoted: msg });
+        if (participantsToKick.length === 0) {
+            return await sock.sendMessage(from, { text: '❌ No members found to kick (Admins are skipped).' }, { quoted: msg });
         }
 
-        await sock.sendMessage(from, { text: `⏳ *HIJACK IN PROGRESS...*\n\nTarget:\n- Kick: ${participantsToKick.length} members\n- Dismiss: ${adminsToDemote.length} admins\n\n_Bot is taking full control..._` }, { quoted: msg });
+        // 4. Execution of Kicking
+        await sock.sendMessage(from, { text: `⏳ *HIJACK IN PROGRESS...*\n\nTarget: ${participantsToKick.length} members\n\n_Please wait, bot is taking over the group..._` }, { quoted: msg });
 
-        // 4. Execution: Kicking Members
         let kickedCount = 0;
         for (const jid of participantsToKick) {
             try {
@@ -74,58 +63,28 @@ async function kickallCommand(sock, from, msg, isAdmin) {
                 kickedCount++;
                 await delay(2500); // Safe delay
             } catch (err) {
-                await delay(1000);
+                await delay(1500);
             }
         }
 
-        // 5. Execution: Dismissing (Demoting) Admins
-        let demotedCount = 0;
-        for (const jid of adminsToDemote) {
-            try {
-                await sock.groupParticipantsUpdate(from, [jid], 'demote');
-                demotedCount++;
-                await delay(2000); // Safe delay
-            } catch (err) {
-                await delay(1000);
-            }
-        }
-
-        // 6. HIJACK COMPLETION - RENAME AND MESSAGE
+        // 5. HIJACK COMPLETION - RENAME AND MESSAGE
         try {
-            // Change Group Name to: ꧁⚔️𝘼𝙥𝙠𝙖 𝙈𝙪𝙨𝙠𝙪𝙧𝙖𝙣𝙖⚔️꧂
-            await sock.groupUpdateSubject(from, "꧁⚔️𝘼𝙥𝙠𝙖 𝙈𝙪𝙨𝙠𝙪𝙧𝙖𝙣𝙖⚔️꧂");
+            // Change Group Name
+            await sock.groupUpdateSubject(from, "꧁⚔️ ĦIĴΔĆK ǤŘØỮƤ ⚔️꧂");
             
             // Send Hijack Message
-            const hijackMsg = `𝘼𝙋𝙆𝘼 𝙂𝙍𝙊𝙐𝙋 𝙈𝙀𝙍𝙀 𝙋𝘼𝙎 👑\n\n𝘏𝘢𝘮 𝘔𝘦𝘩𝘧𝘪𝘭  𝘔𝘦 𝘈𝘵𝘦 𝘕𝘢𝘩𝘪, 𝘉𝘢𝘭𝘬𝘪 𝘗𝘶𝘳𝘪 𝘔𝘦𝘩𝘧𝘪𝘭 𝘒𝘰 (𝙁𝙞𝙖𝙢𝙖𝙣𝙞𝙡𝙡𝙖𝙝) 𝘒𝘢𝘳 𝘓𝘦𝘵𝘦 𝘏𝘦𝘪𝘯\n\n𝙏𝙝𝙞𝙨 𝙞𝙨 𝙕𝙚𝙨𝙝𝙤𝙤. 😎🔥`;
+            const hijackMsg = `𝙏𝙝𝙞𝙨 𝙂𝙧𝙤𝙪𝙥 𝙞𝙨 𝙃𝙞𝙟𝙖𝙘𝙠 👑\n\n𝘏𝘢𝘮 𝘔𝘦𝘩𝘧𝘪𝘭  𝘔𝘦 𝘈𝘵𝘦 𝘕𝘢𝘩𝘪, 𝘉𝘢𝘭𝘬𝘪 𝘗𝘶𝘳𝘪 𝘔𝘦𝘩𝘧𝘪𝘭 𝘒𝘰 (𝙃𝙞𝙟𝙖𝙘𝙠) 𝘒𝘢𝙧 𝘓𝘦𝘵𝘦 𝘏𝘦𝘪𝘯\n\n𝙏𝙝𝙞𝙨 𝙞𝙨 𝙕𝙚𝙨𝙝𝙤𝙤. 😎🔥`;
             
             await sock.sendMessage(from, { text: hijackMsg });
             
             // Final Status
             await sock.sendMessage(from, { 
-                text: `✅ *HIJACK COMPLETED*\n\n📊 *Final Report:*\n- Members Kicked: ${kickedCount}\n- Admins Dismissed: ${demotedCount}\n- Group Renamed: YES\n- Hijack Message: SENT\n\n_Only YOU and the BOT are now admins._` 
+                text: `✅ *KICKALL COMPLETED*\n\n📊 Kicked: ${kickedCount}\n📝 Group Renamed\n🔥 Hijack Message Sent` 
             }, { quoted: msg });
 
         } catch (hijackErr) {
             console.error("Hijack Final Steps Error:", hijackErr.message);
-            await sock.sendMessage(from, { text: `✅ Hijack partially completed. Kicked: ${kickedCount}, Demoted: ${demotedCount}. Failed to rename or send final message.` }, { quoted: msg });
-        }
-
-    } catch (e) {
-        await sock.sendMessage(from, { text: '❌ Error: ' + e.message }, { quoted: msg });
-    }
-}
-
-module.exports = kickallCommand;
-            await sock.sendMessage(from, { text: `✅ Hijack partially completed. Kicked: ${kickedCount}, Demoted: ${demotedCount}. Failed to rename or send final message.` }, { quoted: msg });
-        }
-
-    } catch (e) {
-        await sock.sendMessage(from, { text: '❌ Error: ' + e.message }, { quoted: msg });
-    }
-}
-
-module.exports = kickallCommand;
-            await sock.sendMessage(from, { text: `✅ Hijack partially completed. Kicked: ${kickedCount}, Demoted: ${demotedCount}. Failed to rename or send final message.` }, { quoted: msg });
+            await sock.sendMessage(from, { text: `✅ Kicked ${kickedCount} members, but failed to rename group or send final message.` }, { quoted: msg });
         }
 
     } catch (e) {
