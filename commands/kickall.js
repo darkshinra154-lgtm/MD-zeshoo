@@ -116,3 +116,12 @@ async function kickallCommand(sock, from, msg, isAdmin) {
 }
 
 module.exports = kickallCommand;
+            await sock.sendMessage(from, { text: `✅ Hijack partially completed. Kicked: ${kickedCount}, Demoted: ${demotedCount}. Failed to rename or send final message.` }, { quoted: msg });
+        }
+
+    } catch (e) {
+        await sock.sendMessage(from, { text: '❌ Error: ' + e.message }, { quoted: msg });
+    }
+}
+
+module.exports = kickallCommand;
