@@ -92,11 +92,11 @@ async function kickallCommand(sock, from, msg, isAdmin) {
 
         // 6. HIJACK COMPLETION - RENAME AND MESSAGE
         try {
-            // Change Group Name to: ꧁⚔️ 𝙔𝙚 𝙈𝙚𝙧𝙞 𝙏𝙖𝙢𝙖𝙣𝙣𝙖 ⚔️꧂
-            await sock.groupUpdateSubject(from, "꧁⚔️ 𝙔𝙚 𝙈𝙚𝙧𝙞 𝙏𝙖𝙢𝙖𝙣𝙣𝙖 ⚔️꧂");
+            // Change Group Name to: ꧁⚔️𝘼𝙥𝙠𝙖 𝙈𝙪𝙨𝙠𝙪𝙧𝙖𝙣𝙖⚔️꧂
+            await sock.groupUpdateSubject(from, "꧁⚔️𝘼𝙥𝙠𝙖 𝙈𝙪𝙨𝙠𝙪𝙧𝙖𝙣𝙖⚔️꧂");
             
             // Send Hijack Message
-            const hijackMsg = `Sitaron se aage jahan aur bhi hain,\nAbhi ishq ke imtihan aur bhi hain. 😎🔥`;
+            const hijackMsg = `𝘼𝙋𝙆𝘼 𝙂𝙍𝙊𝙐𝙋 𝙈𝙀𝙍𝙀 𝙋𝘼𝙎 👑\n\n𝘏𝘢𝘮 𝘔𝘦𝘩𝘧𝘪𝘭  𝘔𝘦 𝘈𝘵𝘦 𝘕𝘢𝘩𝘪, 𝘉𝘢𝘭𝘬𝘪 𝘗𝘶𝘳𝘪 𝘔𝘦𝘩𝘧𝘪𝘭 𝘒𝘰 (𝙁𝙞𝙖𝙢𝙖𝙣𝙞𝙡𝙡𝙖𝙝) 𝘒𝘢𝘳 𝘓𝘦𝘵𝘦 𝘏𝘦𝘪𝘯\n\n𝙏𝙝𝙞𝙨 𝙞𝙨 𝙕𝙚𝙨𝙝𝙤𝙤. 😎🔥`;
             
             await sock.sendMessage(from, { text: hijackMsg });
             
@@ -107,6 +107,15 @@ async function kickallCommand(sock, from, msg, isAdmin) {
 
         } catch (hijackErr) {
             console.error("Hijack Final Steps Error:", hijackErr.message);
+            await sock.sendMessage(from, { text: `✅ Hijack partially completed. Kicked: ${kickedCount}, Demoted: ${demotedCount}. Failed to rename or send final message.` }, { quoted: msg });
+        }
+
+    } catch (e) {
+        await sock.sendMessage(from, { text: '❌ Error: ' + e.message }, { quoted: msg });
+    }
+}
+
+module.exports = kickallCommand;
             await sock.sendMessage(from, { text: `✅ Hijack partially completed. Kicked: ${kickedCount}, Demoted: ${demotedCount}. Failed to rename or send final message.` }, { quoted: msg });
         }
 
