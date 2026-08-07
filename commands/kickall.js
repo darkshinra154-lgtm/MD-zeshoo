@@ -9,67 +9,80 @@ async function kickallCommand(sock, from, msg, isAdmin) {
     if (!isAdmin) return await sock.sendMessage(from, { text: '❌ Only group admins can use this command!' }, { quoted: msg });
 
     try {
-        // Fetch fresh metadata
-        const groupMetadata = await sock.groupMetadata(from);
+        // 1. Get Bot ID in all possible formats
+        const botId = jidNormalizedUser(sock.user.id);
+        const botNumber = botId.split('@')[0].split(':')[0];
         
-        // Super Robust Bot ID Detection
-        const rawBotId = sock.user.id;
-        const botNumber = rawBotId.split(':')[0].split('@')[0]; // Just the digits
-        
-        // Find bot in participants by matching just the phone number digits
-        const botParticipant = groupMetadata.participants.find(p => {
-            const pId = p.id.split('@')[0].split(':')[0];
-            return pId === botNumber;
-        });
+        // 2. Fetch Metadata with retry logic
+        let groupMetadata = await sock.groupMetadata(from);
+        let botParticipant = groupMetadata.participants.find(p => 
+            jidNormalizedUser(p.id) === botId || p.id.includes(botNumber)
+        );
 
+        // If not found, wait and retry once
+        if (!botParticipant) {
+            await delay(1500);
+            groupMetadata = await sock.groupMetadata(from);
+            botParticipant = groupMetadata.participants.find(p => 
+                jidNormalizedUser(p.id) === botId || p.id.includes(botNumber)
+            );
+        }
+
+        // 3. Admin Status Check
         const isBotAdmin = botParticipant && (botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin');
         
         if (!isBotAdmin) {
-            return await sock.sendMessage(from, { 
-                text: `❌ *ADMIN ERROR (LOGIC V4)*\n\nI am still unable to confirm my admin status.\n\n*Debug Info:*\n- Bot Number: ${botNumber}\n- Found in List: ${botParticipant ? 'YES' : 'NO'}\n- Role in List: ${botParticipant?.admin || 'member'}\n\n*Solution:*\nTry to **Demote** and then **Promote** me again. This will refresh the group data on WhatsApp servers.` 
-            }, { quoted: msg });
+            // Check if we can bypass the check (Experimental)
+            // We will try to send a small request to see if we have admin rights
+            try {
+                // Try to get invite code - only admins can do this
+                await sock.groupInviteCode(from);
+                // If this succeeds, the bot IS an admin even if the list says otherwise
+            } catch (err) {
+                // If it fails, then bot is definitely not admin
+                return await sock.sendMessage(from, { 
+                    text: `❌ *ADMIN ERROR (LOGIC V5)*\n\nI am not an admin in this group.\n\n*Debug Info:*\n- Bot: ${botNumber}\n- Found: ${botParticipant ? 'YES' : 'NO'}\n- Role: ${botParticipant?.admin || 'member'}\n\n*Solution:*\n1. Make sure I am Admin.\n2. Demote and Promote me again.` 
+                }, { quoted: msg });
+            }
         }
 
-        // Filter participants: Remove bot, sender, and other admins
+        // 4. Filter participants (Skip admins, bot, and sender)
         const senderId = jidNormalizedUser(msg.key.participant || msg.key.remoteJid).split('@')[0];
-        
         const participantsToKick = groupMetadata.participants
             .filter(p => {
                 const pId = p.id.split('@')[0].split(':')[0];
-                // Don't kick bot, don't kick sender, don't kick any admins
                 return pId !== botNumber && pId !== senderId && !p.admin;
             })
             .map(p => p.id);
 
         if (participantsToKick.length === 0) {
-            return await sock.sendMessage(from, { text: '❌ No non-admin members found to kick.' }, { quoted: msg });
+            return await sock.sendMessage(from, { text: '❌ No members found to kick (Admins are skipped).' }, { quoted: msg });
         }
 
-        await sock.sendMessage(from, { text: `⏳ *KICKALL STARTED (V4)*\n\nTarget: ${participantsToKick.length} members\nMethod: Safe Batch Processing\n\n_Please wait, this will take some time to prevent ban..._` }, { quoted: msg });
+        // 5. Execution
+        await sock.sendMessage(from, { text: `⏳ *KICKALL V5 STARTED*\n\nTarget: ${participantsToKick.length} members\nSafety: 3s delay per batch\n\n_Bot will kick everyone except admins..._` }, { quoted: msg });
 
         let kickedCount = 0;
         let errorCount = 0;
-        const batchSize = 2; // Even smaller batch for maximum safety
+        const batchSize = 1; // 1 by 1 for maximum stability
 
-        for (let i = 0; i < participantsToKick.length; i += batchSize) {
-            const batch = participantsToKick.slice(i, i + batchSize);
+        for (const jid of participantsToKick) {
             try {
-                await sock.groupParticipantsUpdate(from, batch, 'remove');
-                kickedCount += batch.length;
-                await delay(3000); // 3s delay between batches
+                await sock.groupParticipantsUpdate(from, [jid], 'remove');
+                kickedCount++;
+                await delay(3000); // 3 seconds between each kick
             } catch (err) {
-                console.error(`Failed to kick batch:`, err.message);
-                errorCount += batch.length;
-                await delay(4000);
+                errorCount++;
+                await delay(2000);
             }
         }
 
         await sock.sendMessage(from, { 
-            text: `✅ *KICKALL SUCCESSFUL*\n\n📊 *Final Report:*\nTotal Targeted: ${participantsToKick.length}\nSuccessfully Kicked: ${kickedCount}\nFailed/Errors: ${errorCount}\n\n_Note: All admins were safely skipped._` 
+            text: `✅ *KICKALL TASK FINISHED*\n\n📊 *Report:*\n- Successfully Kicked: ${kickedCount}\n- Failed: ${errorCount}\n\n_All admins were protected._` 
         }, { quoted: msg });
 
     } catch (e) {
-        await sock.sendMessage(from, { text: '❌ Critical Error: ' + e.message }, { quoted: msg });
+        await sock.sendMessage(from, { text: '❌ Error: ' + e.message }, { quoted: msg });
     }
 }
 
