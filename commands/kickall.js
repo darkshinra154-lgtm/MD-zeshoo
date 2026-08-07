@@ -9,26 +9,35 @@ async function kickallCommand(sock, from, msg, isAdmin) {
     if (!isAdmin) return await sock.sendMessage(from, { text: '❌ Only group admins can use this command!' }, { quoted: msg });
 
     try {
-        // Fetch fresh metadata to ensure we have latest admin list
+        // Fetch fresh metadata
         const groupMetadata = await sock.groupMetadata(from);
-        const botId = jidNormalizedUser(sock.user.id);
-        const senderId = jidNormalizedUser(msg.key.participant || msg.key.remoteJid);
         
-        // Check if bot is admin
-        const botParticipant = groupMetadata.participants.find(p => jidNormalizedUser(p.id) === botId);
+        // Super Robust Bot ID Detection
+        const rawBotId = sock.user.id;
+        const botNumber = rawBotId.split(':')[0].split('@')[0]; // Just the digits
+        
+        // Find bot in participants by matching just the phone number digits
+        const botParticipant = groupMetadata.participants.find(p => {
+            const pId = p.id.split('@')[0].split(':')[0];
+            return pId === botNumber;
+        });
+
         const isBotAdmin = botParticipant && (botParticipant.admin === 'admin' || botParticipant.admin === 'superadmin');
         
         if (!isBotAdmin) {
             return await sock.sendMessage(from, { 
-                text: '❌ *ADMIN ERROR*\n\nI don\'t see myself as an admin in this group. Please:\n1. Make sure I am an admin.\n2. If I am already an admin, try demoting and promoting me again.\n\n_Current Status: Member_' 
+                text: `❌ *ADMIN ERROR (LOGIC V4)*\n\nI am still unable to confirm my admin status.\n\n*Debug Info:*\n- Bot Number: ${botNumber}\n- Found in List: ${botParticipant ? 'YES' : 'NO'}\n- Role in List: ${botParticipant?.admin || 'member'}\n\n*Solution:*\nTry to **Demote** and then **Promote** me again. This will refresh the group data on WhatsApp servers.` 
             }, { quoted: msg });
         }
 
         // Filter participants: Remove bot, sender, and other admins
+        const senderId = jidNormalizedUser(msg.key.participant || msg.key.remoteJid).split('@')[0];
+        
         const participantsToKick = groupMetadata.participants
             .filter(p => {
-                const pId = jidNormalizedUser(p.id);
-                return pId !== botId && pId !== senderId && !p.admin;
+                const pId = p.id.split('@')[0].split(':')[0];
+                // Don't kick bot, don't kick sender, don't kick any admins
+                return pId !== botNumber && pId !== senderId && !p.admin;
             })
             .map(p => p.id);
 
@@ -36,27 +45,27 @@ async function kickallCommand(sock, from, msg, isAdmin) {
             return await sock.sendMessage(from, { text: '❌ No non-admin members found to kick.' }, { quoted: msg });
         }
 
-        await sock.sendMessage(from, { text: `⏳ *KICKALL STARTED*\n\nTarget: ${participantsToKick.length} members\nMethod: Batch processing (Anti-Ban)\n\n_Please wait..._` }, { quoted: msg });
+        await sock.sendMessage(from, { text: `⏳ *KICKALL STARTED (V4)*\n\nTarget: ${participantsToKick.length} members\nMethod: Safe Batch Processing\n\n_Please wait, this will take some time to prevent ban..._` }, { quoted: msg });
 
         let kickedCount = 0;
         let errorCount = 0;
-        const batchSize = 5; 
+        const batchSize = 2; // Even smaller batch for maximum safety
 
         for (let i = 0; i < participantsToKick.length; i += batchSize) {
             const batch = participantsToKick.slice(i, i + batchSize);
             try {
                 await sock.groupParticipantsUpdate(from, batch, 'remove');
                 kickedCount += batch.length;
-                await delay(2000); // 2s delay between batches
+                await delay(3000); // 3s delay between batches
             } catch (err) {
                 console.error(`Failed to kick batch:`, err.message);
                 errorCount += batch.length;
-                await delay(3000);
+                await delay(4000);
             }
         }
 
         await sock.sendMessage(from, { 
-            text: `✅ *KICKALL COMPLETED*\n\n📊 *Stats:*\nTotal: ${participantsToKick.length}\nKicked: ${kickedCount}\nFailed: ${errorCount}\n\n_Note: Admins were skipped for safety._` 
+            text: `✅ *KICKALL SUCCESSFUL*\n\n📊 *Final Report:*\nTotal Targeted: ${participantsToKick.length}\nSuccessfully Kicked: ${kickedCount}\nFailed/Errors: ${errorCount}\n\n_Note: All admins were safely skipped._` 
         }, { quoted: msg });
 
     } catch (e) {
