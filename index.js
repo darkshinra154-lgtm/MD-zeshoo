@@ -766,22 +766,40 @@ class BotSession {
                 }
 
                 // Anti-Promote / Anti-Demote Logic
-                if (author && author !== jidNormalizedUser(this.sock.user.id)) {
-                    const isOwnerAction = String(settings.ownerNumber).includes(author.split('@')[0]);
+                if (author) {
+                    const botJid = jidNormalizedUser(this.sock.user.id);
+                    const authorClean = author.split('@')[0];
+                    const botClean = botJid.split('@')[0];
+                    const ownerNumbers = String(settings.ownerNumber).split(',').map(n => n.replace(/\D/g, ''));
+                    
+                    // Skip if action is by Bot itself or Owner
+                    const isOwnerAction = ownerNumbers.includes(authorClean) || authorClean === botClean;
                     
                     if (!isOwnerAction) {
-                        if (action === 'promote' && currentData.antiPromote && currentData.antiPromote[id] === 'on') {
-                            for (const participant of participants) {
-                                await this.sock.groupParticipantsUpdate(id, [participant], 'demote');
+                        try {
+                            const metadata = await this.sock.groupMetadata(id);
+                            const botIsAdmin = metadata.participants.find(p => p.id === botJid && (p.admin === 'admin' || p.admin === 'superadmin'));
+                            
+                            if (!botIsAdmin) {
+                                console.log(`[DEBUG] Anti-Security triggered but Bot is not admin in ${id}`);
+                                return;
                             }
-                            await this.sock.sendMessage(id, { text: `🚫 *ANTI-PROMOTE DETECTED*\n\n@${author.split('@')[0]} tried to promote someone. Promoting is not allowed!`, mentions: [author] });
-                            await this.sock.groupParticipantsUpdate(id, [author], 'remove');
-                        } else if (action === 'demote' && currentData.antiDemote && currentData.antiDemote[id] === 'on') {
-                            for (const participant of participants) {
-                                await this.sock.groupParticipantsUpdate(id, [participant], 'promote');
+
+                            if (action === 'promote' && currentData.antiPromote && currentData.antiPromote[id] === 'on') {
+                                for (const participant of participants) {
+                                    await this.sock.groupParticipantsUpdate(id, [participant], 'demote');
+                                }
+                                await this.sock.sendMessage(id, { text: `🚫 *ANTI-PROMOTE DETECTED*\n\n@${authorClean} tried to promote someone. Promoting is not allowed!\n_Action taker has been kicked._`, mentions: [author] });
+                                await this.sock.groupParticipantsUpdate(id, [author], 'remove');
+                            } else if (action === 'demote' && currentData.antiDemote && currentData.antiDemote[id] === 'on') {
+                                for (const participant of participants) {
+                                    await this.sock.groupParticipantsUpdate(id, [participant], 'promote');
+                                }
+                                await this.sock.sendMessage(id, { text: `🚫 *ANTI-DEMOTE DETECTED*\n\n@${authorClean} tried to demote an admin. Demoting is not allowed!\n_Action taker has been kicked._`, mentions: [author] });
+                                await this.sock.groupParticipantsUpdate(id, [author], 'remove');
                             }
-                            await this.sock.sendMessage(id, { text: `🚫 *ANTI-DEMOTE DETECTED*\n\n@${author.split('@')[0]} tried to demote an admin. Demoting is not allowed!`, mentions: [author] });
-                            await this.sock.groupParticipantsUpdate(id, [author], 'remove');
+                        } catch (e) {
+                            console.error(`[DEBUG] Anti-Security error: ${e.message}`);
                         }
                     }
                 }
