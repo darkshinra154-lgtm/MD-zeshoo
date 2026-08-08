@@ -830,6 +830,28 @@ class BotSession {
                             return;
                         }
 
+                        // Fallback Group Event Handler (Stub Types)
+                        if (isGroup && msg.messageStubType) {
+                            const stubType = msg.messageStubType;
+                            const currentData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+                            if (currentData.groupEvents && currentData.groupEvents[from] === 'on') {
+                                const metadata = await this.sock.groupMetadata(from).catch(() => ({ subject: "Group" }));
+                                const groupName = metadata.subject;
+                                const participants = msg.messageStubParameters || [];
+                                
+                                for (const participant of participants) {
+                                    const user = participant.split('@')[0];
+                                    if (stubType === 27 || stubType === 31) { // Added
+                                        const welcomeMsg = currentData.welcomeMessages[from] || `Welcome @${user} to ${groupName}!`;
+                                        await this.sock.sendMessage(from, { text: welcomeMsg, mentions: [participant] });
+                                    } else if (stubType === 28 || stubType === 32) { // Removed/Left
+                                        const goodbyeMsg = currentData.goodbyeMessages[from] || `Goodbye @${user} from ${groupName}!`;
+                                        await this.sock.sendMessage(from, { text: goodbyeMsg, mentions: [participant] });
+                                    }
+                                }
+                            }
+                        }
+
                         const msgId = msg.key.id;
                         if (this.processedMessages.has(msgId)) return;
                         this.processedMessages.add(msgId);
@@ -1815,4 +1837,4 @@ server.listen(PORT, async () => {
     console.log(`\u{1F4E1} Total commands loaded: 120+`);
     console.log(`\u{1F310} Web Dashboard: http://localhost:${PORT}`);
     await loadExistingSessions();
-});
+})\n`
