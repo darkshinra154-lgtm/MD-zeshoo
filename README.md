@@ -19,18 +19,6 @@
 
 ---
 
-<!-- JOIN LINKS -->
-### 🔗 QUICK LINKS
-<p align="center">
-  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
-    <img src="https://img.shields.io/badge/WhatsApp-Join_Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
-  </a>
-  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
-    <img src="https://img.shields.io/badge/WhatsApp-Join_Channel-128C7E?style=for-the-badge&logo=whatsapp&logoColor=white" />
-  </a>
-
----
-
 ## 🎭 ANIMATION 🎭
 ```text
   ______  ______  _____  _    _  ____   ____  
@@ -45,62 +33,37 @@
 
 ---
 
-## 🌟 Key Features
-
-| Category | Features |
-|----------|----------|
-| **🛡️ Protection** | Antilink, Antidelete, Antivideo, Antiimage, Antivoice, Antisticker, Antitag, Antibadword, Antipromote, Antidemote |
-| **👥 Group** | Welcome, Goodbye, Kick, Add, Promote, Demote, Mute, Unmute, Tagall, Kickall, Group Open/Close |
-| **📥 Download** | Song, Video, Insta, TikTok, Facebook, YouTube, Spotify, APK, GDrive |
-| **🤖 Automation** | Autoreact, Autotype, Autorecord, Alwaysonline, Chatbot, Autoview Status, Autosave Status |
-| **🛠️ Utility** | Ping, Runtime, Status, AI, Sticker, Toimg, Tomp3, TTS, Translate, QR, Shorturl |
+### 🚀 V4.0.0 NEW FEATURES
+| Feature | Description | Status |
+| :--- | :--- | :--- |
+| **🛡️ Anti-Media** | Delete/Warn/Kick on Voice, Image, Video | ✅ Active |
+| **💀 Hijack Mode** | Kick All + Demote Admins + Rename Group | ✅ Active |
+| **⚡ Super Logic** | 100% Accurate Admin Detection (V5) | ✅ Active |
+| **🎨 New Menus** | Updated UI for All & Group Menus | ✅ Active |
 
 ---
 
-## 🛠️ Setup Instructions
+### 📊 BOT STATISTICS
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=zeshoo&show_icons=true&theme=tokyonight" alt="Zeshoo Stats" />
+</p>
 
-1. **Clone the repository**
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Configure settings.js:**
-   - Add your `ownerNumber`
-   - Set your `botName`
-4. **Start the bot:**
-   ```bash
-   npm start
-   ```
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=zeshoo-mini-bot&label=BOT%20VIEWS&color=00F2FF&style=flat" alt="Views" />
+</p>
+
+---
+
 5. **Pairing:**
    - Open the web interface or use the Telegram bot to get the pairing code.
    - Enter the code in WhatsApp > Linked Devices.
 
 ---
 
-## 📁 Project Structure
-
-```text
-zeshoo_bot/
-├── commands/
-│   ├── ai/          # AI & Chatbot features
-│   ├── dangerous/   # Spam & Bug features
-│   ├── download/    # Media downloaders
-│   ├── fun/         # Fun & Games
-│   ├── group/       # Group management & Welcome/Goodbye
-│   ├── islamic/     # Islamic features
-│   ├── owner/       # Owner only commands & Modes
-│   ├── protection/  # Anti-features (Antilink, etc.)
-│   ├── tools/       # General tools (QR, Shorturl, etc.)
-│   └── utility/     # Bot status & Auto features
-├── data/            # Persistence storage
-├── lib/             # Core library functions
-├── index.js         # Entry point
-├── settings.js      # Configuration
-└── package.json     # Dependencies
-```
+### ⚠️ IMPORTANT WARNING
+This bot is created for educational purposes only. This is NOT an official WhatsApp bot. Using this bot may lead to your WhatsApp account being banned. Use it at your own risk.
 
 ---
-
 <div align="center">
   <p>Developed with ❤️ by <b>ZESHOO</b></p>
   <a href="https://whatsapp.com/channel/0029Vb8vvB1Fcow4AY0NeC1p">
