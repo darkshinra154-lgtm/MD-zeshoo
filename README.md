@@ -19,6 +19,15 @@
 
 ---
 
+# 👀 Visitors
+
+<p align="center">
+<img src="https://komarev.com/ghpvc/?username=TristanCage&style=for-the-badge&color=redgreen"/>
+</p>
+
+---
+
+
 ## 🎭 ANIMATION 🎭
 ```text
   ______  ______  _____  _    _  ____   ____  
