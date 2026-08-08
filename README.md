@@ -3,11 +3,13 @@
 <div align="center">
   <img src="https://files.catbox.moe/qwvzbn.png" width="250" height="250" alt="ZESHOO Bot Logo">
   
-  <p align="center">
-    <a href="#"><img src="https://img.shields.io/badge/Version-4.0.0-green?style=for-the-badge" alt="Version"></a>
-    <a href="#"><img src="https://img.shields.io/badge/Baileys-Multi--Device-blue?style=for-the-badge" alt="Baileys"></a>
-    <a href="#"><img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Status"></a>
-  </p>
+<p align="center">
+  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
+    <img src="https://img.shields.io/badge/WhatsApp-Join_Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
+    <img src="https://img.shields.io/badge/WhatsApp-Join_Channel-128C7E?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
 
   <h3>🚀 The Most Powerful WhatsApp Automation Bot 🚀</h3>
 </div>
