@@ -14,6 +14,22 @@
 
 ---
 
+<!-- JOIN LINKS -->
+### 🔗 QUICK LINKS
+<p align="center">
+  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
+    <img src="https://img.shields.io/badge/WhatsApp-Join_Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
+    <img src="https://img.shields.io/badge/WhatsApp-Join_Channel-128C7E?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://t.me/your-telegram-link">
+    <img src="https://img.shields.io/badge/Telegram-Join_Channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" />
+  </a>
+</p>
+
+---
+
 ## 🎭 ANIMATION 🎭
 ```text
   ______  ______  _____  _    _  ____   ____  
