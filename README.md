@@ -1,4 +1,4 @@
-# ZESHOO MD BOT v4.0.0
+# ZESHOO MD BOT v4.0
 
 <div align="center">
   <img src="https://files.catbox.moe/qwvzbn.png" width="250" height="250" alt="ZESHOO Bot Logo">
