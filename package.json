@@ -1,6 +1,6 @@
 {
   "name": "zeshoo-mini-bot",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "ZESHOO MINI BOT - Ultimate WhatsApp Automation Tool with 120+ Commands",
   "main": "index.js",
   "scripts": {
@@ -34,17 +34,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "keywords": [
-    "whatsapp-bot",
-    "baileys",
-    "zeshoo-md",
-    "whatsapp-automation",
-    "bot"
-  ],
-  "author": "ZESHOO",
-  "license": "MIT"
-}
   },
   "keywords": [
     "whatsapp-bot",
