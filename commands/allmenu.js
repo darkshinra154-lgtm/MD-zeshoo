@@ -3,12 +3,12 @@ const settings = require('../settings');
 async function allMenu(sock, from, msg, session, commands) {
     // ===== HEAVY BOX HEADER =====
     let allMenuText = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-    allMenuText += `┃  💀  *ZESHOO MINI V4.0.0*  💀               ┃\n`;}],path:}],path:
+    allMenuText += `┃  💀  *ZESHOO MINI V4.0.0*  💀               ┃\n`;
     allMenuText += `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n`;
     allMenuText += `┃  📋 TOTAL COMMANDS: 300+                   ┃\n`;
     allMenuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
 
-    // ===== CATEGORIES (آپ کی اوریجنل کیٹیگریز) =====
+    // ===== CATEGORIES =====
     const categories = {
         '👑 OWNER': ['public', 'private', 'mode', 'owner', 'setname', 'block', 'unblock', 'bcgc', 'bcall', 'restart', 'shutdown', 'xrestart', 'xshutdown', 'nuke', 'clear', 'backup', 'restore', 'clone', 'addsudo', 'delsudo', 'listsudo', 'setprefix', 'broadcast', 'self', 'autostatus', 'autoseen', 'autolike', 'autobio'],
         '👥 GROUP': ['kick', 'kickall', 'add', 'promote', 'demote', 'mute', 'unmute', 'tagall', 'hidetag', 'grouplink', 'groupinfo', 'join', 'leave', 'setdesc', 'setppgc', 'getbio', 'getdp', 'accept', 'poll', 'everyonemsg', 'listonline', 'tagme', 'mention', 'kickoffline', 'snipe', 'editmsg', 'react', 'send', 'forward', 'save', 'welcome', 'goodbye', 'setwelcome', 'setgoodbye', 'antilink', 'antidelete', 'antiviewonce', 'antifake', 'antispam', 'antibug', 'anticall', 'antistatus [on/off/warn/kick]', 'antisticker [on/off/warn/kick]', 'antivoice [on/off/warn/kick]', 'antiimage [on/off/warn/kick]', 'antivideo [on/off/warn/kick]'],
@@ -22,36 +22,28 @@ async function allMenu(sock, from, msg, session, commands) {
         '✏️ TEXT MAKER': ['zeshoo', 'cup', 'coffee', 'cloud', 'smoke', 'flower', 'leaf', 'wood', 'stone', 'blood', 'horror', 'scary', 'spooky', 'christmas', 'birthday', 'love', 'heart']
     };
 
-    // ===== BUILD LIST (Compact per category) =====
+    // ===== BUILD LIST =====
     for (const [category, cmds] of Object.entries(categories)) {
-        // Category Header with Heavy Box
         allMenuText += `┏━━━━━━ ❲ *${category}* ❳ ━━━━━━┓\n`;
-        
         let line = `┃  ➤ `;
         cmds.forEach((cmd, index) => {
             line += `${settings.prefix}${cmd}`;
             if (index < cmds.length - 1) line += `, `;
-            
-            // اگر لائن بہت لمبی ہو جائے تو توڑ دو (WhatsApp کیپشن سیف رکھنے کے لیے)
             if (line.length > 90) {
                 allMenuText += `${line}\n`;
                 line = `┃  ➤ `;
             }
         });
-        // باقی بچی ہوئی لائن
         if (line !== `┃  ➤ `) allMenuText += `${line}\n`;
-        
         allMenuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
     }
 
-    // ===== FOOTER =====
     allMenuText += `☠️  *POWERED BY : ZESHOO MINI*  ☠️`;
 
     // ===== SEND =====
     try {
         await sock.sendMessage(from, { image: { url: settings.startimage }, caption: allMenuText }, { quoted: msg });
     } catch (e) {
-        // Fallback
         await sock.sendMessage(from, { text: allMenuText }, { quoted: msg });
     }
 }
