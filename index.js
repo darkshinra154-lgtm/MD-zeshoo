@@ -319,7 +319,7 @@ if (tgBot) {
             `*\u{1F510} TO CONNECT:* \n` +
             `Simply send your WhatsApp number with country code.\n` +
             `Example: \`923271054080\`\n\n` +
-            `> © POWERED BY ZESHOO MINI BOT v4.0.0`;
+            `> © POWERED BY ZESHOO MINI BOT v3.0`;
 
         try {
             await tgBot.sendPhoto(chatId, settings.startimage, { 
@@ -393,7 +393,7 @@ if (tgBot) {
             `\u{1F4F1} *Connected Bots:* ${connectedCount}\n` +
             `\u{26A1} *Total Sessions:* ${Object.keys(sessions).length}\n\n` +
             `\u{1F522} *Active Numbers:*\n\`${numbersList}\`\n\n` +
-            `> © POWERED BY ZESHOO MINI BOT v4.0.0`;
+            `> © POWERED BY ZESHOO MINI BOT v3.0`;
 
         await tgBot.sendMessage(chatId, statusMsg, { parse_mode: 'Markdown' });
     });
@@ -492,26 +492,20 @@ if (process.env.OPENAI_API_KEY) {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Only serve specific files to avoid exposing secrets like .env
+app.use(express.static(path.join(__dirname)));
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
-// Serve assets if needed, but not the root directory
-// app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-const AUTH_DIR = path.join(__dirname, 'auth_info');
-const DATA_FILE = path.join(__dirname, 'data/bot_data.json');
-const TMP_DIR = path.join(__dirname, 'tmp');
-
-// Ensure all required directories exist
+const AUTH_DIR = './auth_info';
+const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
-fs.ensureDirSync(path.dirname(DATA_FILE));
-fs.ensureDirSync(TMP_DIR);
+fs.ensureDirSync('./data');
 
 let botData;
 const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
@@ -679,7 +673,7 @@ class BotSession {
                 syncFullHistory: false,
                 shouldSyncHistoryMessage: () => false,
                 markOnlineOnConnect: true,
-                keepAliveIntervalMs: 30000,
+                keepZeshooveIntervalMs: 30000,
                 connectTimeoutMs: 60000,
                 defaultQueryTimeoutMs: 60000,
                 emitOwnEvents: true,
@@ -723,7 +717,7 @@ class BotSession {
                                 `\u{25EC}\u{2501}\u{2501}\u{2501}\u{3008} *ZESHOO MINI CODE* \u{3009}\u{2501}\u{2501}\u{2501}\u{25EC}\n\n` +
                                 `*\u{1F511} YOUR PAIRING CODE:* \`${code}\`\n\n` +
                                 `_Enter this code in your WhatsApp Linked Devices section._\n\n` +
-                                `> © POWERED BY ZESHOO MINI BOT v4.0.0`;
+                                `> © POWERED BY ZESHOO MINI BOT v3.0`;
                             await tgBot.sendMessage(this.tgChatId, codeMsg, { parse_mode: 'Markdown' });
                         }
 
@@ -1442,7 +1436,7 @@ class BotSession {
                             `*\u{2705} CONNECTION SUCCESSFUL!* \n\n` +
                             `Your WhatsApp number has been successfully linked.\n` +
                             `You can now use all commands in your WhatsApp.\n\n` +
-                            `> © POWERED BY ZESHOO MINI BOT v4.0.0`;
+                            `> © POWERED BY ZESHOO MINI BOT v3.0`;
                         await tgBot.sendMessage(this.tgChatId, successMsg, { parse_mode: 'Markdown' });
                     }
 
@@ -1472,7 +1466,7 @@ class BotSession {
                             `*\u{1F3B5} CURRENT SONG:*\n` +
                             `> [SONG_PLACEHOLDER]\n\n` +
                             `Type *.menu* to explore all features.\n\n` +
-                            `> © POWERED BY ZESHOO MINI BOT v4.0.0`;
+                            `> © POWERED BY ZESHOO MINI BOT v3.0`;
 
                         await this.sock.sendMessage(botNumber, { 
                             image: { url: settings.startimage },
