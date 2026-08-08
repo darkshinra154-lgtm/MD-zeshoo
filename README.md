@@ -10,7 +10,7 @@
   <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
     <img src="https://img.shields.io/badge/WhatsApp-Join_Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
   </a>
-  <a href="https://chat.whatsapp.com/FF9iAfHMQ8fJM7n2xv0hay?s=cl&p=a&ilr=1">
+  <a href="https://whatsapp.com/channel/0029Vb8vvB1Fcow4AY0NeC1p">
     <img src="https://img.shields.io/badge/WhatsApp-Join_Channel-128C7E?style=for-the-badge&logo=whatsapp&logoColor=white" />
   </a>
 
