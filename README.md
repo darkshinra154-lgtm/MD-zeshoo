@@ -1,92 +1,61 @@
-# ZESHOO MD BOT v4.0
+# ZESHOO MD BOT v3.0
 
-<div align="center">
-  <img src="https://files.catbox.moe/qwvzbn.png" width="250" height="250" alt="ZESHOO Bot Logo">
-  
-  <p align="center">
-    <a href="#"><img src="https://img.shields.io/badge/Version-4.0.0-green?style=for-the-badge" alt="Version"></a>
-    <a href="#"><img src="https://img.shields.io/badge/Baileys-Multi--Device-blue?style=for-the-badge" alt="Baileys"></a>
-    <a href="#"><img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Status"></a>
-  </p>
+Ultimate WhatsApp Automation Tool with 120+ Commands
 
-  <h3>🚀 The Most Powerful WhatsApp Automation Bot 🚀</h3>
-</div>
+## Features
 
----
+- 120+ WhatsApp Commands
+- Hacking & Dangerous Tools
+- Group Management
+- Media Download (YouTube, TikTok, Instagram, etc.)
+- Image Editing Tools
+- Islamic Commands
+- Fun & Games
+- AI Chatbot
+- Anti-Delete, Anti-Link, Anti-Call
+- Auto-Status Viewer
+- Web Dashboard with Broadcast
+- Telegram Pairing System
+- Premium User System
 
-## 🎭 ANIMATION 🎭
-```text
-  ______  ______  _____  _    _  ____   ____  
- |___  / |  ____|/ ____|| |  | |/ __ \ / __ \ 
-    / /  | |__  | (___  | |__| | |  | | |  | |
-   / /   |  __|  \___ \ |  __  | |  | | |  | |
-  / /__  | |____ ____) || |  | | |__| | |__| |
- /_____| |______|_____/ |_|  |_|\____/ \____/ 
-                                               
-     🔥 ZESHOO WEB PAIR MD IS ALIVE 🔥
+## Installation
+
+```bash
+npm install
+npm start
 ```
 
----
+## Environment Variables
 
-## 🌟 Key Features
+| Variable | Description |
+|----------|-------------|
+| TELEGRAM_BOT_TOKEN | Bot token from @BotFather |
+| OWNER_NUMBER | Your WhatsApp number |
+| OWNER_TELEGRAM_ID | Your Telegram ID |
+| OPENAI_API_KEY | OpenAI API key (optional) |
+| ADMIN_PASSWORD | Dashboard password |
+| PORT | Web dashboard port |
 
-| Category | Features |
-|----------|----------|
-| **🛡️ Protection** | Antilink, Antidelete, Antivideo, Antiimage, Antivoice, Antisticker, Antitag, Antibadword, Antipromote, Antidemote |
-| **👥 Group** | Welcome, Goodbye, Kick, Add, Promote, Demote, Mute, Unmute, Tagall, Kickall, Group Open/Close |
-| **📥 Download** | Song, Video, Insta, TikTok, Facebook, YouTube, Spotify, APK, GDrive |
-| **🤖 Automation** | Autoreact, Autotype, Autorecord, Alwaysonline, Chatbot, Autoview Status, Autosave Status |
-| **🛠️ Utility** | Ping, Runtime, Status, AI, Sticker, Toimg, Tomp3, TTS, Translate, QR, Shorturl |
+## Command Categories
 
----
+- **Media Download**: song, video, youtube, instagram, tiktok, facebook, etc.
+- **Group Management**: kick, add, promote, demote, mute, revoke, etc.
+- **Dangerous**: hack, crash, freeze, lag, bug, spam, report, etc.
+- **Tools**: weather, github, ipinfo, whois, portscan, etc.
+- **Fun**: joke, meme, dare, truth, ship, trivia, etc.
+- **Islamic**: quran, hadith, prayer, qibla, asmaulhusna
+- **System**: uptime, serverinfo, speedtest, device
 
-## 🛠️ Setup Instructions
+## Web Dashboard
 
-1. **Clone the repository**
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Configure settings.js:**
-   - Add your `ownerNumber`
-   - Set your `botName`
-4. **Start the bot:**
-   ```bash
-   npm start
-   ```
-5. **Pairing:**
-   - Open the web interface or use the Telegram bot to get the pairing code.
-   - Enter the code in WhatsApp > Linked Devices.
+Access at `http://localhost:3000`
 
----
+Default password: `zeshoo_techteaM`
 
-## 📁 Project Structure
+## License
 
-```text
-zeshoo_bot/
-├── commands/
-│   ├── ai/          # AI & Chatbot features
-│   ├── dangerous/   # Spam & Bug features
-│   ├── download/    # Media downloaders
-│   ├── fun/         # Fun & Games
-│   ├── group/       # Group management & Welcome/Goodbye
-│   ├── islamic/     # Islamic features
-│   ├── owner/       # Owner only commands & Modes
-│   ├── protection/  # Anti-features (Antilink, etc.)
-│   ├── tools/       # General tools (QR, Shorturl, etc.)
-│   └── utility/     # Bot status & Auto features
-├── data/            # Persistence storage
-├── lib/             # Core library functions
-├── index.js         # Entry point
-├── settings.js      # Configuration
-└── package.json     # Dependencies
-```
+MIT
 
----
+⚠️ Important Warning
 
-<div align="center">
-  <p>Developed with ❤️ by <b>ZESHOO</b></p>
-  <a href="https://whatsapp.com/channel/0029Vb8vvB1Fcow4AY0NeC1p">
-    <img src="https://img.shields.io/badge/Join-Our%20Channel-25D366?style=for-the-badge&logo=whatsapp" alt="WhatsApp Channel">
-  </a>
-</div>
+ This bot is created for educational purposes only. This is NOT an official WhatsApp bot. Using this bot may lead to your WhatsApp account being banned. Use it at your own risk. The developers will not be responsible for any consequences or account bans that may occur while using this bot.
