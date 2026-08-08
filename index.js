@@ -740,34 +740,40 @@ class BotSession {
             // Group Participants Update (Welcome/Goodbye)
             this.sock.ev.on('group-participants.update', async (update) => {
                 const { id, participants, action } = update;
-                console.log(`[Group Event] Action: ${action} in ${id}`);
-                const botData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); 
+                console.log(`[DEBUG] Group event received: ${action} in ${id}`);
                 
-                if (botData.groupEvents && botData.groupEvents[id] === 'on') {
-                    console.log(`[Group Event] Processing ${action} for ${participants.length} users`);
+                // Reload data to ensure fresh state
+                const currentData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+                
+                if (currentData.groupEvents && currentData.groupEvents[id] === 'on') {
+                    console.log(`[DEBUG] Group events are ON for ${id}. Processing...`);
                     for (const participant of participants) {
                         try {
-                            const metadata = await this.sock.groupMetadata(id);
+                            const metadata = await this.sock.groupMetadata(id).catch(() => ({ subject: "Group" }));
                             const groupName = metadata.subject;
                             const user = participant.split('@')[0];
                             
                             if (action === 'add') {
-                                const welcomeMsg = botData.welcomeMessages[id] || `Welcome @${user} to ${groupName}!`;
+                                const welcomeMsg = currentData.welcomeMessages[id] || `Welcome @${user} to ${groupName}!`;
+                                console.log(`[DEBUG] Sending welcome to ${participant}`);
                                 await this.sock.sendMessage(id, { 
                                     text: welcomeMsg, 
                                     mentions: [participant] 
                                 });
                             } else if (action === 'remove') {
-                                const goodbyeMsg = botData.goodbyeMessages[id] || `Goodbye @${user} from ${groupName}!`;
+                                const goodbyeMsg = currentData.goodbyeMessages[id] || `Goodbye @${user} from ${groupName}!`;
+                                console.log(`[DEBUG] Sending goodbye to ${participant}`);
                                 await this.sock.sendMessage(id, { 
                                     text: goodbyeMsg, 
                                     mentions: [participant] 
                                 });
                             }
                         } catch (e) {
-                            this.sendLog(`Group event error: ${e.message}`, 'error');
+                            console.error(`[DEBUG] Group event error: ${e.message}`);
                         }
                     }
+                } else {
+                    console.log(`[DEBUG] Group events are OFF for ${id}. (State: ${currentData.groupEvents ? currentData.groupEvents[id] : 'undefined'})`);
                 }
             });
 
@@ -1203,6 +1209,18 @@ class BotSession {
                                         case 'debug': {
                                             const status = `*\u{1F6E0} DEBUG INFO*\n\n*Prefix:* ${settings.prefix}\n*Group Events:* ${botData.groupEvents[from] || 'off'}\n*Welcome Msg:* ${botData.welcomeMessages[from] ? 'Set' : 'Default'}\n*Bot Version:* ${settings.version}`;
                                             await this.sock.sendMessage(from, { text: status }, { quoted: msg });
+                                            break;
+                                        }
+                                        case 'testwelcome': {
+                                            if (!isGroup) return this.sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            const welcomeMsg = botData.welcomeMessages[from] || `Welcome @${sender.split('@')[0]} to this Group!`;
+                                            await this.sock.sendMessage(from, { text: `*Test Welcome:*\n\n${welcomeMsg}`, mentions: [sender] });
+                                            break;
+                                        }
+                                        case 'testgoodbye': {
+                                            if (!isGroup) return this.sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            const goodbyeMsg = botData.goodbyeMessages[from] || `Goodbye @${sender.split('@')[0]} from this Group!`;
+                                            await this.sock.sendMessage(from, { text: `*Test Goodbye:*\n\n${goodbyeMsg}`, mentions: [sender] });
                                             break;
                                         }
 
