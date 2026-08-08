@@ -508,7 +508,7 @@ fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
 let botData;
-const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
+const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [], welcomeMessages: {}, goodbyeMessages: {}, groupEvents: {} };
 if (fs.existsSync(DATA_FILE)) {
     try { 
         const loadedData = fs.readJsonSync(DATA_FILE); 
@@ -734,6 +734,38 @@ class BotSession {
 
             this.sock.ev.on('creds.update', saveCreds);
 
+            // Group Participants Update (Welcome/Goodbye)
+            this.sock.ev.on('group-participants.update', async (update) => {
+                const { id, participants, action } = update;
+                const botData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); // Get fresh data
+                
+                if (botData.groupEvents && botData.groupEvents[id] === 'on') {
+                    for (const participant of participants) {
+                        try {
+                            const metadata = await this.sock.groupMetadata(id);
+                            const groupName = metadata.subject;
+                            const user = participant.split('@')[0];
+                            
+                            if (action === 'add') {
+                                const welcomeMsg = botData.welcomeMessages[id] || `Welcome @${user} to ${groupName}!`;
+                                await this.sock.sendMessage(id, { 
+                                    text: welcomeMsg, 
+                                    mentions: [participant] 
+                                });
+                            } else if (action === 'remove') {
+                                const goodbyeMsg = botData.goodbyeMessages[id] || `Goodbye @${user} from ${groupName}!`;
+                                await this.sock.sendMessage(id, { 
+                                    text: goodbyeMsg, 
+                                    mentions: [participant] 
+                                });
+                            }
+                        } catch (e) {
+                            this.sendLog(`Group event error: ${e.message}`, 'error');
+                        }
+                    }
+                }
+            });
+
             this.sock.ev.on('call', async (calls) => {
                 if (botData.antiCall[this.userId]) {
                     for (const call of calls) {
@@ -818,7 +850,7 @@ class BotSession {
                         }
 
                         // AI auto-reply
-                        if (this.aiEnabled && !isMe && !isGroup && text && !text.startsWith('.')) {
+                        if (this.aiEnabled && !isMe && !isGroup && text && !text.startsWith(settings.prefix)) {
                             try {
                                 const aiResponse = await this.getAIResponse(from, text);
                                 await this.sock.sendMessage(from, { text: aiResponse }, { quoted: msg });
@@ -1100,13 +1132,13 @@ class BotSession {
                         }
 
                         // Process commands
-                        if (text.toLowerCase().startsWith('.')) {
+                        if (text.toLowerCase().startsWith(settings.prefix)) {
                             // Re-check authorization for commands
                             if (!this.isPublic && !isAuthorized) return;
                             const cmd = text.toLowerCase();
                             const args = text.split(' ').slice(1);
                             const q = args.join(' ');
-                            const commandName = cmd.slice(1).split(' ')[0];
+                            const commandName = cmd.slice(settings.prefix.length).split(' ')[0];
 
                             (async () => {
                                 try {
@@ -1144,7 +1176,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]\n\u{25FB} .antisticker [on/off/warn/kick]\n\u{25FB} .antivoice [on/off/warn/kick]\n\u{25FB} .antiimage [on/off/warn/kick]\n\u{25FB} .antivideo [on/off/warn/kick]`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} ${settings.prefix}kick\n\u{25FB} ${settings.prefix}add\n\u{25FB} ${settings.prefix}promote\n\u{25FB} ${settings.prefix}demote\n\u{25FB} ${settings.prefix}mute\n\u{25FB} ${settings.prefix}unmute\n\u{25FB} ${settings.prefix}tagall\n\u{25FB} ${settings.prefix}hidetag\n\u{25FB} ${settings.prefix}welcome [on/off]\n\u{25FB} ${settings.prefix}setwelcome [text]\n\u{25FB} ${settings.prefix}goodbye [on/off]\n\u{25FB} ${settings.prefix}setgoodbye [text]\n\u{25FB} ${settings.prefix}grouplink\n\u{25FB} ${settings.prefix}groupinfo\n\u{25FB} ${settings.prefix}antistatus [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antisticker [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antivoice [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antiimage [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antivideo [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -1203,6 +1235,56 @@ class BotSession {
                                         case 'kickall': await commands.kickall(this.sock, from, msg, true); break;
                                         case 'accept': await commands.accept(this.sock, from, msg, true); break;
                                         case 'poll': await commands.poll(this.sock, from, msg, q); break;
+                                        case 'welcome': {
+                                            if (!isGroup) return sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            if (!isAdmin) return sock.sendMessage(from, { text: "❌ Only admins can use this." });
+                                            if (q === 'on') {
+                                                botData.groupEvents[from] = 'on';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Welcome/Goodbye events enabled!" });
+                                            } else if (q === 'off') {
+                                                botData.groupEvents[from] = 'off';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Welcome/Goodbye events disabled!" });
+                                            } else {
+                                                await this.sock.sendMessage(from, { text: "Usage: .welcome on/off" });
+                                            }
+                                            break;
+                                        }
+                                        case 'setwelcome': {
+                                            if (!isGroup) return sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            if (!isAdmin) return sock.sendMessage(from, { text: "❌ Only admins can use this." });
+                                            if (!q) return this.sock.sendMessage(from, { text: "❌ Provide a welcome message." });
+                                            botData.welcomeMessages[from] = q;
+                                            saveBotData();
+                                            await this.sock.sendMessage(from, { text: "✅ Welcome message updated!" });
+                                            break;
+                                        }
+                                        case 'goodbye': {
+                                            if (!isGroup) return sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            if (!isAdmin) return sock.sendMessage(from, { text: "❌ Only admins can use this." });
+                                            if (q === 'on') {
+                                                botData.groupEvents[from] = 'on';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Welcome/Goodbye events enabled!" });
+                                            } else if (q === 'off') {
+                                                botData.groupEvents[from] = 'off';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Welcome/Goodbye events disabled!" });
+                                            } else {
+                                                await this.sock.sendMessage(from, { text: "Usage: .goodbye on/off" });
+                                            }
+                                            break;
+                                        }
+                                        case 'setgoodbye': {
+                                            if (!isGroup) return sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            if (!isAdmin) return sock.sendMessage(from, { text: "❌ Only admins can use this." });
+                                            if (!q) return this.sock.sendMessage(from, { text: "❌ Provide a goodbye message." });
+                                            botData.goodbyeMessages[from] = q;
+                                            saveBotData();
+                                            await this.sock.sendMessage(from, { text: "✅ Goodbye message updated!" });
+                                            break;
+                                        }
                                         case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, true, q); break;
                                         case 'listonline': await commands.listonline(this.sock, from, msg); break;
 
