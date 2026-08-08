@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "echo \"Success: no tests specified\" && exit 0"
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc10",
