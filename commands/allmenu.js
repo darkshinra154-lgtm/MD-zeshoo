@@ -3,7 +3,7 @@ const settings = require('../settings');
 async function allMenu(sock, from, msg, session, commands) {
     // ===== HEAVY BOX HEADER =====
     let allMenuText = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
-    allMenuText += `┃  💀  *ZESHOO MINI ALL MENU*  💀               ┃\n`;
+    allMenuText += `┃  💀  *ZESHOO MINI V4.0.0*  💀               ┃\n`;}],path:}],path:
     allMenuText += `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫\n`;
     allMenuText += `┃  📋 TOTAL COMMANDS: 300+                   ┃\n`;
     allMenuText += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
