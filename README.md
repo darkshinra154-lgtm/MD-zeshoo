@@ -1,61 +1,89 @@
-# ZESHOO MD BOT v3.0
+<div align="center">
 
-Ultimate WhatsApp Automation Tool with 120+ Commands
+# ꧁⚔️ 𝙕𝙀𝙎𝙃𝙊𝙊 𝙈𝙄𝙉𝙄 𝘽𝙊𝙏 𝙑4.0.0 ⚔️꧂
 
-## Features
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=00F2FF&center=true&vCenter=true&width=435&lines=ULTIMATE+WHATSAPP+BOT;POWERED+BY+ZESHOO;HIJACK+MODE+ENABLED;V4.0.0+VERSION+RELEASED" alt="Typing SVG" />
+</p>
 
-- 120+ WhatsApp Commands
-- Hacking & Dangerous Tools
-- Group Management
-- Media Download (YouTube, TikTok, Instagram, etc.)
-- Image Editing Tools
-- Islamic Commands
-- Fun & Games
-- AI Chatbot
-- Anti-Delete, Anti-Link, Anti-Call
-- Auto-Status Viewer
-- Web Dashboard with Broadcast
-- Telegram Pairing System
-- Premium User System
+<!-- ANIMATED PROFILE SECTION -->
+<div style="position: relative; display: inline-block;">
+  <img src="https://files.catbox.moe/qwvzbn.png" width="200" style="border-radius: 50%; border: 5px solid #00F2FF; box-shadow: 0 0 20px #00F2FF; animation: pulse 2s infinite;" />
+</div>
 
-## Installation
+<style>
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 10px #00F2FF; }
+  50% { transform: scale(1.05); box-shadow: 0 0 30px #00F2FF; }
+  100% { transform: scale(1); box-shadow: 0 0 10px #00F2FF; }
+}
+</style>
 
+### 👑 OWNER: ZESHOO
+
+---
+
+<!-- JOIN LINKS -->
+### 🔗 QUICK LINKS
+<p align="center">
+  <a href="https://chat.whatsapp.com/your-group-link">
+    <img src="https://img.shields.io/badge/WhatsApp-Join_Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://whatsapp.com/channel/0029Vb8vvB1Fcow4AY0NeC1p">
+    <img src="https://img.shields.io/badge/WhatsApp-Join_Channel-128C7E?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+  <a href="https://t.me/your-telegram-link">
+    <img src="https://img.shields.io/badge/Telegram-Join_Channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" />
+  </a>
+</p>
+
+---
+
+### 🚀 V4.0.0 NEW FEATURES
+| Feature | Description | Status |
+| :--- | :--- | :--- |
+| **🛡️ Anti-Media** | Delete/Warn/Kick on Voice, Image, Video | ✅ Active |
+| **💀 Hijack Mode** | Kick All + Demote Admins + Rename Group | ✅ Active |
+| **⚡ Super Logic** | 100% Accurate Admin Detection (V5) | ✅ Active |
+| **🎨 New Menus** | Updated UI for All & Group Menus | ✅ Active |
+
+---
+
+### 🛠️ SETUP INSTRUCTIONS
 ```bash
+# Clone the repository
+git clone https://github.com/your-repo/zeshoo-mini-bot
+
+# Install dependencies
 npm install
+
+# Start the bot
 npm start
 ```
 
-## Environment Variables
+---
 
-| Variable | Description |
-|----------|-------------|
-| TELEGRAM_BOT_TOKEN | Bot token from @BotFather |
-| OWNER_NUMBER | Your WhatsApp number |
-| OWNER_TELEGRAM_ID | Your Telegram ID |
-| OPENAI_API_KEY | OpenAI API key (optional) |
-| ADMIN_PASSWORD | Dashboard password |
-| PORT | Web dashboard port |
+### 📊 BOT STATISTICS
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=zeshoo&show_icons=true&theme=tokyonight" alt="Zeshoo Stats" />
+</p>
 
-## Command Categories
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=zeshoo-mini-bot&label=BOT%20VIEWS&color=00F2FF&style=flat" alt="Views" />
+</p>
 
-- **Media Download**: song, video, youtube, instagram, tiktok, facebook, etc.
-- **Group Management**: kick, add, promote, demote, mute, revoke, etc.
-- **Dangerous**: hack, crash, freeze, lag, bug, spam, report, etc.
-- **Tools**: weather, github, ipinfo, whois, portscan, etc.
-- **Fun**: joke, meme, dare, truth, ship, trivia, etc.
-- **Islamic**: quran, hadith, prayer, qibla, asmaulhusna
-- **System**: uptime, serverinfo, speedtest, device
+---
 
-## Web Dashboard
+### ⚠️ IMPORTANT WARNING
+This bot is created for educational purposes only. This is NOT an official WhatsApp bot. Using this bot may lead to your WhatsApp account being banned. Use it at your own risk.
 
-Access at `http://localhost:3000`
+---
 
-Default password: `zeshoo_techteaM`
+### 🤝 CONTRIBUTIONS
+Special thanks to all the developers and the ZESHOO community for making this possible!
 
-## License
+<p align="center">
+  <b>Developed with ❤️ by ZESHOO</b>
+</p>
 
-MIT
-
-⚠️ Important Warning
-
- This bot is created for educational purposes only. This is NOT an official WhatsApp bot. Using this bot may lead to your WhatsApp account being banned. Use it at your own risk. The developers will not be responsible for any consequences or account bans that may occur while using this bot.
+</div>
