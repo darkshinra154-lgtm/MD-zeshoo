@@ -71,6 +71,10 @@ const commands = {
     anticall: require('./commands/anticall'),
     antidelete: require('./commands/antidelete'),
     antistatus: require('./commands/antistatus'),
+    antisticker: require('./commands/antisticker'),
+    antivoice: require('./commands/antivoice'),
+    antiimage: require('./commands/antiimage'),
+    antivideo: require('./commands/antivideo'),
 
     // Status/Auto Features
     status: require('./commands/status'),
@@ -503,10 +507,22 @@ const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
-let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
+let botData;
+const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [] };
 if (fs.existsSync(DATA_FILE)) {
-    try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
-}
+    try { 
+        const loadedData = fs.readJsonSync(DATA_FILE); 
+        botData = { ...defaultBotData, ...loadedData, 
+            antilinkGroups: { ...defaultBotData.antilinkGroups, ...(loadedData.antilinkGroups || {}) },
+            antiStickerGroups: { ...defaultBotData.antiStickerGroups, ...(loadedData.antiStickerGroups || {}) },
+            antiVoiceGroups: { ...defaultBotData.antiVoiceGroups, ...(loadedData.antiVoiceGroups || {}) },
+            antiImageGroups: { ...defaultBotData.antiImageGroups, ...(loadedData.antiImageGroups || {}) },
+            antiVideoGroups: { ...defaultBotData.antiVideoGroups, ...(loadedData.antiVideoGroups || {}) },
+            antiStatusGroups: { ...defaultBotData.antiStatusGroups, ...(loadedData.antiStatusGroups || {}) },
+            statusSettings: { ...defaultBotData.statusSettings, ...(loadedData.statusSettings || {}) }
+        };
+    } catch (e) { botData = { ...defaultBotData }; }
+} else { botData = { ...defaultBotData }; }
 
 function saveBotData() {
     fs.writeJsonSync(DATA_FILE, botData);
@@ -831,10 +847,7 @@ class BotSession {
 
                         const isSessionUser = senderClean === this.phoneNumber || senderClean === this.userId || senderClean === botNumberClean;
 
-                        // PRIORITY FIX: Bot must work in DM/Private Chats
-                        // isAuthorized determines if the bot should respond to commands
-                        const isAuthorized = true; // Everyone authorized
-
+                        // Calculate isAdmin early for authorization
                         let isAdmin = isOwner;
                         if (!isAdmin && isGroup) {
                             try {
@@ -845,6 +858,10 @@ class BotSession {
                                 isAdmin = false;
                             }
                         }
+
+                        // isAuthorized determines if the bot should respond to commands
+                        // Requirement: In Private Mode, only Admins/Owner can use. In Public Mode, everyone.
+                        const isAuthorized = this.isPublic || isOwner || isSessionUser || isMe || isAdmin;
 
                         // Anti-status in groups
                         if (isGroup && botData.antiStatusGroups && botData.antiStatusGroups[from]) {
@@ -879,6 +896,184 @@ class BotSession {
                         }
 
 
+                        // ===== ANTI-STICKER SYSTEM =====
+                        // This runs BEFORE any command processing to catch ALL sticker messages
+                        if (isGroup && botData.antiStickerGroups && botData.antiStickerGroups[from] && botData.antiStickerGroups[from] !== false && botData.antiStickerGroups[from] !== 'false') {
+                            const antiStickerMode = botData.antiStickerGroups[from];
+                            
+                            // Robust sticker detection - checks EVERY possible way a sticker can arrive
+                            let isStickerMsg = false;
+                            
+                            // Method 1: Check raw msg.message for stickerMessage key at any level
+                            if (msg.message) {
+                                const rawStr = JSON.stringify(msg.message);
+                                if (rawStr.includes('stickerMessage')) isStickerMsg = true;
+                            }
+                            
+                            // Method 2: Check the unwrapped messageContent
+                            if (messageContent && messageContent.stickerMessage) isStickerMsg = true;
+                            
+                            // Method 3: Check if type is stickerMessage
+                            if (type === 'stickerMessage') isStickerMsg = true;
+                            
+                            // Method 4: Check inside ephemeralMessage specifically
+                            if (msg.message?.ephemeralMessage?.message?.stickerMessage) isStickerMsg = true;
+                            
+                            // Method 5: Check inside viewOnceMessage specifically
+                            if (msg.message?.viewOnceMessage?.message?.stickerMessage) isStickerMsg = true;
+                            
+                            // Method 6: Check inside viewOnceMessageV2 specifically
+                            if (msg.message?.viewOnceMessageV2?.message?.stickerMessage) isStickerMsg = true;
+                            
+                            if (isStickerMsg && !isMe) {
+                                this.sendLog(`[AntiSticker] Sticker detected in ${from} from ${sender} | Mode: ${antiStickerMode}`, 'info');
+                                
+                                // Skip if sender is admin (unless they are owner)
+                                if (isAdmin && !isOwner) {
+                                    this.sendLog(`[AntiSticker] Admin ${sender} sent sticker - skipped (admin exempt)`, 'info');
+                                } else {
+                                    try {
+                                        // Step 1: ALWAYS delete the sticker message
+                                        try {
+                                            await this.sock.sendMessage(from, { delete: msg.key });
+                                            this.sendLog(`[AntiSticker] Deleted sticker from ${sender.split('@')[0]}`, 'info');
+                                        } catch (delErr) {
+                                            this.sendLog(`[AntiSticker] Delete error: ${delErr.message}`, 'error');
+                                        }
+
+                                        // Step 2: Take action based on mode
+                                        if (antiStickerMode === 'warn') {
+                                            try {
+                                                await this.sock.sendMessage(from, { 
+                                                    text: `⚠️ *ANTI-STICKER ALERT*\n\n@${sender.split('@')[0]} Stickers are NOT allowed in this group!\n_Your sticker has been deleted._\n_Next time you will be kicked._`, 
+                                                    mentions: [sender] 
+                                                });
+                                                this.sendLog(`[AntiSticker] Warned ${sender.split('@')[0]}`, 'info');
+                                            } catch (warnErr) {
+                                                this.sendLog(`[AntiSticker] Warn error: ${warnErr.message}`, 'error');
+                                            }
+                                        } else if (antiStickerMode === 'kick') {
+                                            try {
+                                                const gMeta = await this.sock.groupMetadata(from);
+                                                const botJid = jidNormalizedUser(this.sock.user.id);
+                                                const botIsAdmin = gMeta.participants.find(p => p.id === botJid);
+                                                
+                                                if (botIsAdmin && (botIsAdmin.admin === 'admin' || botIsAdmin.admin === 'superadmin')) {
+                                                    try {
+                                                        await this.sock.sendMessage(from, { 
+                                                            text: `🚫 *ANTI-STICKER - KICKED*\n\n@${sender.split('@')[0]} has been kicked for sharing sticker!`, 
+                                                            mentions: [sender] 
+                                                        });
+                                                        await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                                        this.sendLog(`[AntiSticker] Kicked ${sender.split('@')[0]}`, 'info');
+                                                    } catch (kickErr) {
+                                                        this.sendLog(`[AntiSticker] Kick execution error: ${kickErr.message}`, 'error');
+                                                    }
+                                                } else {
+                                                    try {
+                                                        await this.sock.sendMessage(from, { 
+                                                            text: `⚠️ @${sender.split('@')[0]} shared a sticker! I need admin role to kick.`, 
+                                                            mentions: [sender] 
+                                                        });
+                                                    } catch (notifErr) {}
+                                                }
+                                            } catch (metaErr) {
+                                                this.sendLog(`[AntiSticker] Group metadata error: ${metaErr.message}`, 'error');
+                                            }
+                                        } else if (antiStickerMode === 'delete') {
+                                            // Already deleted above, no extra action needed
+                                            this.sendLog(`[AntiSticker] Sticker deleted (delete mode)`, 'info');
+                                        }
+                                    } catch (e) {
+                                        this.sendLog(`[AntiSticker] Critical error: ${e.message}`, 'error');
+                                    }
+                                    return; // Stop processing this message further
+                                }
+                            }
+                        }
+                        // ===== END ANTI-STICKER SYSTEM =====
+                        
+                        // ===== ANTI-MEDIA SYSTEM (VOICE, IMAGE, VIDEO) =====
+                        if (isGroup && !isMe && (!isAdmin || isOwner)) {
+                            let mediaAction = null;
+                            let mediaType = null;
+                            let mediaLabel = "";
+
+                            // 1. Check Voice/Audio
+                            if (botData.antiVoiceGroups && botData.antiVoiceGroups[from]) {
+                                if (type === 'audioMessage') {
+                                    mediaAction = botData.antiVoiceGroups[from];
+                                    mediaType = 'voice note';
+                                    mediaLabel = 'AntiVoice';
+                                }
+                            }
+
+                            // 2. Check Image
+                            if (!mediaAction && botData.antiImageGroups && botData.antiImageGroups[from]) {
+                                if (type === 'imageMessage') {
+                                    mediaAction = botData.antiImageGroups[from];
+                                    mediaType = 'image';
+                                    mediaLabel = 'AntiImage';
+                                }
+                            }
+
+                            // 3. Check Video
+                            if (!mediaAction && botData.antiVideoGroups && botData.antiVideoGroups[from]) {
+                                if (type === 'videoMessage') {
+                                    mediaAction = botData.antiVideoGroups[from];
+                                    mediaType = 'video';
+                                    mediaLabel = 'AntiVideo';
+                                }
+                            }
+
+                            if (mediaAction && mediaAction !== 'false') {
+                                // Skip if sender is admin (unless they are owner)
+                                if (isAdmin && !isOwner) {
+                                    // Skip
+                                } else {
+                                    try {
+                                        this.sendLog(`[${mediaLabel}] ${mediaType} detected in ${from} from ${sender} | Mode: ${mediaAction}`, 'info');
+                                        
+                                        // Step 1: ALWAYS delete the message
+                                        try {
+                                            await this.sock.sendMessage(from, { delete: msg.key });
+                                        } catch (delErr) {
+                                            this.sendLog(`[${mediaLabel}] Delete error: ${delErr.message}`, 'error');
+                                        }
+
+                                        // Step 2: Take action based on mode
+                                        if (mediaAction === 'warn') {
+                                            await this.sock.sendMessage(from, { 
+                                                text: `⚠️ *${mediaLabel.toUpperCase()} ALERT*\n\n@${sender.split('@')[0]} ${mediaType.toUpperCase()}S are NOT allowed in this group!\n_Your message has been deleted._\n_Next time you will be kicked._`, 
+                                                mentions: [sender] 
+                                            });
+                                        } else if (mediaAction === 'kick') {
+                                            const gMeta = await this.sock.groupMetadata(from);
+                                            const botJid = jidNormalizedUser(this.sock.user.id);
+                                            const botIsAdmin = gMeta.participants.find(p => p.id === botJid);
+                                            
+                                            if (botIsAdmin && (botIsAdmin.admin === 'admin' || botIsAdmin.admin === 'superadmin')) {
+                                                await this.sock.sendMessage(from, { 
+                                                    text: `🚫 *${mediaLabel.toUpperCase()} - KICKED*\n\n@${sender.split('@')[0]} has been kicked for sharing ${mediaType}!`, 
+                                                    mentions: [sender] 
+                                                });
+                                                await this.sock.groupParticipantsUpdate(from, [sender], "remove");
+                                            } else {
+                                                await this.sock.sendMessage(from, { 
+                                                    text: `⚠️ @${sender.split('@')[0]} shared a ${mediaType}! I need admin role to kick.`, 
+                                                    mentions: [sender] 
+                                                });
+                                            }
+                                        }
+                                        return; // Stop processing this message
+                                    } catch (e) {
+                                        this.sendLog(`[${mediaLabel}] Critical error: ${e.message}`, 'error');
+                                    }
+                                }
+                            }
+                        }
+                        // ===== END ANTI-MEDIA SYSTEM =====
+
                         // Antilink
                         if (isGroup && botData.antilinkGroups[from] && !isAdmin) {
                             const linkPatterns = [/chat.whatsapp.com\//i, /http:\/\//i, /https:\/\//i, /www\./i, /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/i];
@@ -907,7 +1102,7 @@ class BotSession {
                         // Process commands
                         if (text.toLowerCase().startsWith('.')) {
                             // Re-check authorization for commands
-                            // Gate removed: if (!this.isPublic && !isAuthorized) return;
+                            if (!this.isPublic && !isAuthorized) return;
                             const cmd = text.toLowerCase();
                             const args = text.split(' ').slice(1);
                             const q = args.join(' ');
@@ -949,7 +1144,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} .kick\n\u{25FB} .add\n\u{25FB} .promote\n\u{25FB} .demote\n\u{25FB} .mute\n\u{25FB} .unmute\n\u{25FB} .tagall\n\u{25FB} .hidetag\n\u{25FB} .grouplink\n\u{25FB} .groupinfo\n.antistatus [on/off/warn/kick]\n\u{25FB} .antisticker [on/off/warn/kick]\n\u{25FB} .antivoice [on/off/warn/kick]\n\u{25FB} .antiimage [on/off/warn/kick]\n\u{25FB} .antivideo [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -1041,6 +1236,10 @@ class BotSession {
                                         case 'anticall': await commands.anticall(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
                                         case 'antidelete': await commands.antidelete(this.sock, from, msg, true, botData, saveBotData, this.userId, args); break;
                                         case 'antistatus': await commands.antistatus(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antisticker': await commands.antisticker(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antivoice': await commands.antivoice(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antiimage': await commands.antiimage(this.sock, from, msg, true, botData, saveBotData, args); break;
+                                        case 'antivideo': await commands.antivideo(this.sock, from, msg, true, botData, saveBotData, args); break;
                                         case 'antibug': await commands.antibug(this.sock, from, msg, true, botData, saveBotData, args); break;
 
                                         // ===== STATUS / AUTO =====
