@@ -508,7 +508,7 @@ fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
 let botData;
-const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [], welcomeMessages: {}, goodbyeMessages: {}, groupEvents: {} };
+const defaultBotData = { antilinkGroups: {}, antiStickerGroups: {}, antiVoiceGroups: {}, antiImageGroups: {}, antiVideoGroups: {}, antiStatusGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, broadcastHistory: [], welcomeMessages: {}, goodbyeMessages: {}, groupEvents: {}, antiPromote: {}, antiDemote: {} };
 if (fs.existsSync(DATA_FILE)) {
     try { 
         const loadedData = fs.readJsonSync(DATA_FILE); 
@@ -522,7 +522,9 @@ if (fs.existsSync(DATA_FILE)) {
             statusSettings: { ...defaultBotData.statusSettings, ...(loadedData.statusSettings || {}) },
             welcomeMessages: { ...defaultBotData.welcomeMessages, ...(loadedData.welcomeMessages || {}) },
             goodbyeMessages: { ...defaultBotData.goodbyeMessages, ...(loadedData.goodbyeMessages || {}) },
-            groupEvents: { ...defaultBotData.groupEvents, ...(loadedData.groupEvents || {}) }
+            groupEvents: { ...defaultBotData.groupEvents, ...(loadedData.groupEvents || {}) },
+            antiPromote: { ...defaultBotData.antiPromote, ...(loadedData.antiPromote || {}) },
+            antiDemote: { ...defaultBotData.antiDemote, ...(loadedData.antiDemote || {}) }
         };
     } catch (e) { botData = { ...defaultBotData }; }
 } else { botData = { ...defaultBotData }; }
@@ -737,43 +739,51 @@ class BotSession {
 
             this.sock.ev.on('creds.update', saveCreds);
 
-            // Group Participants Update (Welcome/Goodbye)
+            // Group Participants Update (Welcome/Goodbye/Anti-Promote/Anti-Demote)
             this.sock.ev.on('group-participants.update', async (update) => {
-                const { id, participants, action } = update;
+                const { id, participants, action, author } = update;
                 console.log(`[DEBUG] Group event received: ${action} in ${id}`);
                 
                 // Reload data to ensure fresh state
                 const currentData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
                 
+                // Welcome/Goodbye Logic
                 if (currentData.groupEvents && currentData.groupEvents[id] === 'on') {
-                    console.log(`[DEBUG] Group events are ON for ${id}. Processing...`);
                     for (const participant of participants) {
                         try {
                             const metadata = await this.sock.groupMetadata(id).catch(() => ({ subject: "Group" }));
                             const groupName = metadata.subject;
                             const user = participant.split('@')[0];
-                            
                             if (action === 'add') {
                                 const welcomeMsg = currentData.welcomeMessages[id] || `Welcome @${user} to ${groupName}!`;
-                                console.log(`[DEBUG] Sending welcome to ${participant}`);
-                                await this.sock.sendMessage(id, { 
-                                    text: welcomeMsg, 
-                                    mentions: [participant] 
-                                });
+                                await this.sock.sendMessage(id, { text: welcomeMsg, mentions: [participant] });
                             } else if (action === 'remove') {
                                 const goodbyeMsg = currentData.goodbyeMessages[id] || `Goodbye @${user} from ${groupName}!`;
-                                console.log(`[DEBUG] Sending goodbye to ${participant}`);
-                                await this.sock.sendMessage(id, { 
-                                    text: goodbyeMsg, 
-                                    mentions: [participant] 
-                                });
+                                await this.sock.sendMessage(id, { text: goodbyeMsg, mentions: [participant] });
                             }
-                        } catch (e) {
-                            console.error(`[DEBUG] Group event error: ${e.message}`);
+                        } catch (e) {}
+                    }
+                }
+
+                // Anti-Promote / Anti-Demote Logic
+                if (author && author !== jidNormalizedUser(this.sock.user.id)) {
+                    const isOwnerAction = String(settings.ownerNumber).includes(author.split('@')[0]);
+                    
+                    if (!isOwnerAction) {
+                        if (action === 'promote' && currentData.antiPromote && currentData.antiPromote[id] === 'on') {
+                            for (const participant of participants) {
+                                await this.sock.groupParticipantsUpdate(id, [participant], 'demote');
+                            }
+                            await this.sock.sendMessage(id, { text: `🚫 *ANTI-PROMOTE DETECTED*\n\n@${author.split('@')[0]} tried to promote someone. Promoting is not allowed!`, mentions: [author] });
+                            await this.sock.groupParticipantsUpdate(id, [author], 'remove');
+                        } else if (action === 'demote' && currentData.antiDemote && currentData.antiDemote[id] === 'on') {
+                            for (const participant of participants) {
+                                await this.sock.groupParticipantsUpdate(id, [participant], 'promote');
+                            }
+                            await this.sock.sendMessage(id, { text: `🚫 *ANTI-DEMOTE DETECTED*\n\n@${author.split('@')[0]} tried to demote an admin. Demoting is not allowed!`, mentions: [author] });
+                            await this.sock.groupParticipantsUpdate(id, [author], 'remove');
                         }
                     }
-                } else {
-                    console.log(`[DEBUG] Group events are OFF for ${id}. (State: ${currentData.groupEvents ? currentData.groupEvents[id] : 'undefined'})`);
                 }
             });
 
@@ -828,6 +838,28 @@ class BotSession {
                         if (msg.message?.protocolMessage?.type === 0) {
                             await handleMessageRevocation(this.sock, msg);
                             return;
+                        }
+
+                        // Fallback Group Event Handler (Stub Types)
+                        if (isGroup && msg.messageStubType) {
+                            const stubType = msg.messageStubType;
+                            const currentData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+                            if (currentData.groupEvents && currentData.groupEvents[from] === 'on') {
+                                const metadata = await this.sock.groupMetadata(from).catch(() => ({ subject: "Group" }));
+                                const groupName = metadata.subject;
+                                const participants = msg.messageStubParameters || [];
+                                
+                                for (const participant of participants) {
+                                    const user = participant.split('@')[0];
+                                    if (stubType === 27 || stubType === 31) { // Added
+                                        const welcomeMsg = currentData.welcomeMessages[from] || `Welcome @${user} to ${groupName}!`;
+                                        await this.sock.sendMessage(from, { text: welcomeMsg, mentions: [participant] });
+                                    } else if (stubType === 28 || stubType === 32) { // Removed/Left
+                                        const goodbyeMsg = currentData.goodbyeMessages[from] || `Goodbye @${user} from ${groupName}!`;
+                                        await this.sock.sendMessage(from, { text: goodbyeMsg, mentions: [participant] });
+                                    }
+                                }
+                            }
                         }
 
                         const msgId = msg.key.id;
@@ -1187,7 +1219,7 @@ class BotSession {
                                             break;
                                         }
                                         case 'groupmenu': {
-                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} ${settings.prefix}kick\n\u{25FB} ${settings.prefix}add\n\u{25FB} ${settings.prefix}promote\n\u{25FB} ${settings.prefix}demote\n\u{25FB} ${settings.prefix}mute\n\u{25FB} ${settings.prefix}unmute\n\u{25FB} ${settings.prefix}tagall\n\u{25FB} ${settings.prefix}hidetag\n\u{25FB} ${settings.prefix}welcome [on/off]\n\u{25FB} ${settings.prefix}setwelcome [text]\n\u{25FB} ${settings.prefix}goodbye [on/off]\n\u{25FB} ${settings.prefix}setgoodbye [text]\n\u{25FB} ${settings.prefix}grouplink\n\u{25FB} ${settings.prefix}groupinfo\n\u{25FB} ${settings.prefix}antistatus [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antisticker [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antivoice [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antiimage [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antivideo [on/off/warn/kick]`;
+                                            const text = `*\u{1F465} GROUP MENU*\n\n\u{25FB} ${settings.prefix}kick\n\u{25FB} ${settings.prefix}add\n\u{25FB} ${settings.prefix}promote\n\u{25FB} ${settings.prefix}demote\n\u{25FB} ${settings.prefix}mute\n\u{25FB} ${settings.prefix}unmute\n\u{25FB} ${settings.prefix}tagall\n\u{25FB} ${settings.prefix}hidetag\n\u{25FB} ${settings.prefix}welcome [on/off]\n\u{25FB} ${settings.prefix}setwelcome [text]\n\u{25FB} ${settings.prefix}goodbye [on/off]\n\u{25FB} ${settings.prefix}setgoodbye [text]\n\u{25FB} ${settings.prefix}antipromote [on/off]\n\u{25FB} ${settings.prefix}antidemote [on/off]\n\u{25FB} ${settings.prefix}grouplink\n\u{25FB} ${settings.prefix}groupinfo\n\u{25FB} ${settings.prefix}antistatus [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antisticker [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antivoice [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antiimage [on/off/warn/kick]\n\u{25FB} ${settings.prefix}antivideo [on/off/warn/kick]`;
                                             await this.sock.sendMessage(from, { text }, { quoted: msg });
                                             break;
                                         }
@@ -1311,6 +1343,38 @@ class BotSession {
                                             botData.goodbyeMessages[from] = q;
                                             saveBotData();
                                             await this.sock.sendMessage(from, { text: "✅ Goodbye message updated!" });
+                                            break;
+                                        }
+                                        case 'antipromote': {
+                                            if (!isGroup) return this.sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            if (!isAdmin) return this.sock.sendMessage(from, { text: "❌ Only admins can use this." });
+                                            if (q === 'on') {
+                                                botData.antiPromote[from] = 'on';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Anti-Promote enabled!" });
+                                            } else if (q === 'off') {
+                                                botData.antiPromote[from] = 'off';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Anti-Promote disabled!" });
+                                            } else {
+                                                await this.sock.sendMessage(from, { text: `Usage: ${settings.prefix}antipromote on/off` });
+                                            }
+                                            break;
+                                        }
+                                        case 'antidemote': {
+                                            if (!isGroup) return this.sock.sendMessage(from, { text: "❌ This command is for groups only." });
+                                            if (!isAdmin) return this.sock.sendMessage(from, { text: "❌ Only admins can use this." });
+                                            if (q === 'on') {
+                                                botData.antiDemote[from] = 'on';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Anti-Demote enabled!" });
+                                            } else if (q === 'off') {
+                                                botData.antiDemote[from] = 'off';
+                                                saveBotData();
+                                                await this.sock.sendMessage(from, { text: "✅ Anti-Demote disabled!" });
+                                            } else {
+                                                await this.sock.sendMessage(from, { text: `Usage: ${settings.prefix}antidemote on/off` });
+                                            }
                                             break;
                                         }
                                         case 'everyonemsg': await commands.everyonemsg(this.sock, from, msg, true, q); break;
