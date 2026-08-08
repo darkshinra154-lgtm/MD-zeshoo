@@ -29,7 +29,7 @@ async function allMenu(sock, from, msg, session, commands) {
         
         let line = `┃  ➤ `;
         cmds.forEach((cmd, index) => {
-            line += `.${cmd}`;
+            line += `${settings.prefix}${cmd}`;
             if (index < cmds.length - 1) line += `, `;
             
             // اگر لائن بہت لمبی ہو جائے تو توڑ دو (WhatsApp کیپشن سیف رکھنے کے لیے)
