@@ -26,6 +26,80 @@
 </p>
 
 ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Animation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Dragon Element -->
+        <div id="dragon" class="dragon-fly"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+body {
+    margin: 0;
+    padding: 0;
+    background: #111; /* Dark background */
+    overflow: hidden;
+}
+
+.game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Dragon ki design aur image placeholder */
+.dragon-fly {
+    position: absolute;
+    bottom: 100px;
+    left: 50px;
+    width: 150px;
+    height: 150px;
+    background: url('https://icons8.com') no-repeat center;
+    background-size: contain;
+    transition: bottom 0.1s ease;
+}
+
+/* Jab dragon fly (jump) karega */
+.animate-dragon {
+    animation: dragonJump 0.6s linear;
+}
+
+@keyframes dragonJump {
+    0% { bottom: 100px; }
+    30% { bottom: 300px; }
+    70% { bottom: 300px; }
+    100% { bottom: 100px; }
+}
+// Dragon element ko select karna
+const dragon = document.getElementById('dragon');
+
+// Keyboard key press check karne ke liye event listener
+document.addEventListener('keydown', (event) => {
+    // Agar 'ArrowUp' ya 'Spacebar' press ho toh dragon jump karega
+    if (event.key === 'ArrowUp' || event.key === ' ') {
+        jump();
+    }
+});
+
+function jump() {
+    // Agar dragon pehle se jump nahi kar raha hai, toh animation class add karein
+    if (!dragon.classList.contains('animate-dragon')) {
+        dragon.classList.add('animate-dragon');
+
+        // Animation khatam hone ke baad class remove karein taaki dobara jump ho sake
+        setTimeout(() => {
+            dragon.classList.remove('animate-dragon');
+        }, 6000); // 600ms ke baad class remove hogi
+    }
+}
 
 
 ## 🎭 ANIMATION 🎭
