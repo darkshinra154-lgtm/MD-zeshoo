@@ -22,7 +22,7 @@
 # 👀 Visitors
 
 <p align="center">
-<img src="https://komarev.com/ghpvc/?username=TristanCage&style=for-the-badge&color=green"/>
+<img src="https://komarev.com/ghpvc/?username=TristanCage&style=for-the-badge&color=Purplegreen"/>
 </p>
 
 ---
