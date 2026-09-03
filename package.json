@@ -1,8 +1,9 @@
 {
-  "name": "zeshoo-mini-bot",
-  "version": "4.0.0",
-  "description": "ZESHOO MINI BOT - Ultimate WhatsApp Automation Tool with 120+ Commands",
+  "name": "sukuna-bot-md",
+  "version": "2.0.0",
+  "description": "Sukuna Bot v2 - Ultimate WhatsApp Automation Tool with Dynamic Command Loading & ES Modules",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
@@ -33,15 +34,16 @@
     "nodemon": "^3.0.1"
   },
   "engines": {
-    "node": ">=20.18.1"
+    "node": ">=20.0.0"
   },
   "keywords": [
     "whatsapp-bot",
     "baileys",
-    "zeshoo-md",
+    "sukuna-bot",
+    "dark-s-torm",
     "whatsapp-automation",
-    "bot"
+    "es-modules"
   ],
-  "author": "ZESHOO",
+  "author": "Adam (Sukuna Team)",
   "license": "MIT"
 }
