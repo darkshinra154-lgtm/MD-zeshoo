@@ -1,38 +1,48 @@
+/**
+ * ==========================================
+ * 🌟 Sukuna Bot v2.0.0 - Command: APK Downloader
+ * ==========================================
+ * 👑 Developer: Adam (Sukuna Team)
+ * 🛡️ Team: Dark S-Torm
+ * 🚀 Description: يجيب تفاصيل تطبيق الأندرويد ويحمل ملف الـ APK باستخدام NexOracle API.
+ * ==========================================
+ */
 
-
-
-const axios = require('axios');
-
+import axios from 'axios';
 
 /**
- * APK Downloader Command
- * Fetches APK details & downloads the file using NexOracle API.
+ * يجيب تفاصيل تطبيق الأندرويد ويحمل ملف الـ APK.
+ * @param {Object} sock - نسخة اتصال Baileys.
+ * @param {string} chatId - معرف المحادثة أو الجروب.
+ * @param {Object} message - رسالة المستخدم الأصلية.
  */
 async function apkCommand(sock, chatId, message) {
   try {
-    // Extract the user message
+    // استخراج نص رسالة المستخدم
     const userMessage =
-      message.message.conversation ||
-      message.message.extendedTextMessage?.text ||
+      message.message?.conversation ||
+      message.message?.extendedTextMessage?.text ||
       '';
-    const appName = userMessage.split(' ').slice(1).join(' ');
+    
+    // استخراج اسم التطبيق من الرسالة (بعد الأمر)
+    const appName = userMessage.split(' ').slice(1).join(' ').trim();
 
     if (!appName) {
       await sock.sendMessage(
         chatId,
-        { text: '⚠️ Please provide an app name. Example: `.apk whatsapp`' },
+        { text: '⚠️ يا معلم، لازم تكتب اسم التطبيق. مثال: `.apk whatsapp`' },
         { quoted: message }
       );
       return;
     }
 
-    // React with hourglass while processing
+    // تفاعل (React) بساعة رملية أثناء المعالجة
     await sock.sendMessage(chatId, { react: { text: '⏳', key: message.key } });
 
-    // API call to NexOracle
+    // استدعاء API الخاص بـ NexOracle
     const apiUrl = 'https://api.nexoracle.com/downloader/apk';
     const params = {
-      apikey: 'free_key@maher_apis', // Replace with your API key if needed
+      apikey: 'free_key@maher_apis', // ممكن تتغير بمفتاح API بتاعك لو احتجت
       q: appName,
     };
 
@@ -41,30 +51,30 @@ async function apkCommand(sock, chatId, message) {
     if (!response.data || response.data.status !== 200 || !response.data.result) {
       await sock.sendMessage(
         chatId,
-        { text: '❌ Unable to find the APK. Please try again later.' },
+        { text: '❌ مقدرش ألاقي التطبيق ده. تأكد من الاسم وجرب تاني بعدين.' },
         { quoted: message }
       );
       return;
     }
 
-    const { name, lastup, package, size, icon, dllink } = response.data.result;
+    const { name, lastup, package: packageName, size, icon, dllink } = response.data.result;
 
-    // Send thumbnail preview
+    // إرسال صورة مصغرة للتطبيق كمعاينة
     await sock.sendMessage(
       chatId,
       {
         image: { url: icon },
-        caption: `📦 *Downloading ${name}... Please wait.*`,
+        caption: `📦 *جاري تجهيز وتحميل ${name}... استنى شوية.*`,
       },
       { quoted: message }
     );
 
-    // Download APK file
+    // تحميل ملف الـ APK
     const apkResponse = await axios.get(dllink, { responseType: 'arraybuffer' });
     if (!apkResponse.data) {
       await sock.sendMessage(
         chatId,
-        { text: '❌ Failed to download the APK. Please try again later.' },
+        { text: '❌ فشل تحميل ملف الـ APK. جرب تاني بعدين.' },
         { quoted: message }
       );
       return;
@@ -72,15 +82,15 @@ async function apkCommand(sock, chatId, message) {
 
     const apkBuffer = Buffer.from(apkResponse.data, 'binary');
 
-    // Format message with details
-    const details = `📦 *APK Details* 📦\n\n` +
-      `🔖 *Name*: ${name}\n` +
-      `📅 *Last Update*: ${lastup}\n` +
-      `📦 *Package*: ${package}\n` +
-      `📏 *Size*: ${size}\n\n` +
-      `> © POWERED BY ZESHOO MD BOT`;
+    // تنسيق رسالة التفاصيل
+    const details = `📦 *تفاصيل التطبيق* 📦\n\n` +
+      `🔖 *الاسم*: ${name}\n` +
+      `📅 *آخر تحديث*: ${lastup}\n` +
+      `📦 *الحزمة (Package)*: ${packageName}\n` +
+      `📏 *الحجم*: ${size}\n\n` +
+      `> © مطور بواسطة Sukuna Bot | Dark S-Torm`;
 
-    // Send APK as document
+    // إرسال ملف الـ APK كمستند (Document)
     await sock.sendMessage(
       chatId,
       {
@@ -88,26 +98,25 @@ async function apkCommand(sock, chatId, message) {
         mimetype: 'application/vnd.android.package-archive',
         fileName: `${name}.apk`,
         caption: details
-        
       },
       { quoted: message }
     );
 
-    // Success reaction
+    // تفاعل (React) بنجاح
     await sock.sendMessage(chatId, { react: { text: '✅', key: message.key } });
 
   } catch (error) {
-    console.error('❌ Error in apkCommand:', error);
+    console.error('❌ خطأ في أمر الـ APK:', error);
 
     await sock.sendMessage(
       chatId,
-      { text: '❌ Unable to fetch APK details. Please try again later.' },
+      { text: '❌ مقدرش أجيب تفاصيل التطبيق. حصل خطأ غير متوقع، جرب تاني بعدين.' },
       { quoted: message }
     );
 
-    // Failure reaction
+    // تفاعل (React) بفشل
     await sock.sendMessage(chatId, { react: { text: '❌', key: message.key } });
   }
 }
 
-module.exports = apkCommand;
+export default apkCommand;
