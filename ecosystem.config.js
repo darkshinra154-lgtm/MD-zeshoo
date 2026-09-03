@@ -1,6 +1,16 @@
-module.exports = {
+/**
+ * ==========================================
+ * 🌟 Sukuna Bot v2.0.0 - PM2 Ecosystem Configuration
+ * ==========================================
+ * 👑 Developer: Adam (Sukuna Team)
+ * 🛡️ Team: Dark S-Torm
+ * 🚀 Description: PM2 process management configuration for production deployment.
+ * ==========================================
+ */
+
+export default {
   apps: [{
-    name: 'zeshoo-md-bot',
+    name: 'sukuna-bot-md',
     script: './index.js',
     instances: 1,
     autorestart: true,
